@@ -131,7 +131,7 @@ export default function ContactUs() {
                   </div>
                   <div>
                     <h3 className="text-white font-semibold text-lg mb-1">Our Office</h3>
-                    <p className="text-gray-300">123 Business Street, Colombo, Sri Lanka</p>
+                    <p className="text-gray-300">No. 94/6, Hokandara East, Hokandara, Sri Lanka, 10118</p>
                   </div>
                 </div>
 
@@ -143,8 +143,8 @@ export default function ContactUs() {
                   </div>
                   <div>
                     <h3 className="text-white font-semibold text-lg mb-1">Phone Number</h3>
-                    <p className="text-gray-300">+94 11 234 5678</p>
-                    <p className="text-gray-300">+94 77 123 4567</p>
+                    <p className="text-gray-300">+94 11 2563944</p>
+                    <p className="text-gray-300">+94 76 313 1202</p>
                   </div>
                 </div>
 
@@ -156,8 +156,7 @@ export default function ContactUs() {
                   </div>
                   <div>
                     <h3 className="text-white font-semibold text-lg mb-1">Email Address</h3>
-                    <p className="text-gray-300">info@ganuprofessionals.com</p>
-                    <p className="text-gray-300">support@ganuprofessionals.com</p>
+                    <p className="text-gray-300">service@ganuprofessional.lk</p>
                   </div>
                 </div>
 
@@ -227,7 +226,7 @@ export default function ContactUs() {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent transition-colors"
+                    className="text-gray-500 placeholder-gray-500 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent transition-colors"
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -243,7 +242,7 @@ export default function ContactUs() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent transition-colors"
+                    className="text-gray-500 placeholder-gray-500 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent transition-colors"
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -259,7 +258,7 @@ export default function ContactUs() {
                     rows={6}
                     value={formData.message}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent transition-colors resize-none"
+                    className="text-gray-500 placeholder-gray-500 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent transition-colors resize-none"
                     placeholder="Tell us how we can help you..."
                   />
                 </div>

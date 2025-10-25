@@ -251,7 +251,7 @@ export default function Home() {
               Trusted by Industry Leaders
             </h2>
             <p className="text-gray-300 text-lg max-w-2xl mx-auto">
-              We are proud to partner with forward-thinking organizations across various industries
+              We are proud to collaborate with visionary organizations that are shaping the future of their industries.
             </p>
           </motion.div>
 
@@ -332,7 +332,7 @@ export default function Home() {
                 viewport={{ once: true }}
               >
                 <h3 className="text-2xl font-semibold text-white mb-6">Who We Are</h3>
-                <p className="text-gray-300 mb-4">
+                <p className="text-gray-300 mb-4 text-justify">
                   GANU Professional Services is a leading provider of comprehensive HR and financial solutions 
                   tailored to meet the unique needs of businesses across various industries.
                 </p>
