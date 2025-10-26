@@ -1,45 +1,61 @@
 import axios from "axios";
 
+// Detect environment
+const isProduction = process.env.NODE_ENV === 'production';
+const isClient = typeof window !== 'undefined';
+
+// Base URLs
+const LOCAL_BASE_URL = "http://localhost:8080/api";
+const PRODUCTION_BASE_URL = "https://ganu-be.vercel.app/api";
+
 // Base API configuration without interceptors (for server components)
 const API = axios.create({
-  baseURL: "https://ganu-be.vercel.app/api", 
-  // baseURL: "http://localhost:8080/api", 
+  baseURL: isProduction ? PRODUCTION_BASE_URL : LOCAL_BASE_URL,
   headers: { "Content-Type": "application/json" },
+  timeout: 30000, // 30 seconds
 });
 
 // Client-side API with interceptors (for client components)
 const createClientAPI = () => {
   const clientAPI = axios.create({
-    baseURL: "https://ganu-be.vercel.app/api", 
-    //baseURL: "http://localhost:8080/api", 
+    baseURL: isProduction ? PRODUCTION_BASE_URL : LOCAL_BASE_URL,
     headers: { "Content-Type": "application/json" },
+    timeout: 30000,
   });
 
   // Only add interceptors on client side
-  if (typeof window !== 'undefined') {
+  if (isClient) {
     clientAPI.interceptors.request.use((config) => {
       const token = localStorage.getItem('adminToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
       
-      // Remove Content-Type for FormData to let browser set it with boundary
+      // Remove Content-Type for FormData to let browser set it
       if (config.data instanceof FormData) {
         delete config.headers['Content-Type'];
       }
       
+      console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`, {
+        isFormData: config.data instanceof FormData,
+        hasToken: !!token
+      });
+      
       return config;
     });
 
-    // Add response interceptor to handle errors
+    // Enhanced response interceptor
     clientAPI.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} - Success`);
+        return response;
+      },
       (error) => {
-        console.error('API Error:', {
+        console.error(`❌ API Error ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, {
           status: error.response?.status,
+          statusText: error.response?.statusText,
           data: error.response?.data,
           message: error.message,
-          url: error.config?.url
         });
         return Promise.reject(error);
       }
@@ -49,7 +65,7 @@ const createClientAPI = () => {
   return clientAPI;
 };
 
-// TypeScript interfaces (keep your existing interfaces the same)
+// TypeScript interfaces (keep your existing interfaces)
 export interface CompanyInfo {
   id: number;
   name: string;
@@ -76,9 +92,9 @@ export interface Event {
   location: string;
   imageUrl?: string;
   imageFileName?: string;
+  published?: boolean;
   createdAt?: string;
   updatedAt?: string;
-  published?: boolean; // ADD THIS FIELD
 }
 
 export interface ContactFormData {
@@ -110,7 +126,7 @@ export interface Blog {
   pdfFileName?: string;
   isPdfPost?: boolean;
   fileSize?: string;
-  published: boolean; // MAKE SURE THIS EXISTS
+  published: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -126,7 +142,7 @@ export interface Career {
   salary?: string;
   applicationDeadline: string;
   imageUrl?: string;
-  published: boolean; // ADD THIS FIELD
+  published: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -163,7 +179,7 @@ const getContactId = (contact: Contact): string => {
   return contact.id || contact._id || '';
 };
 
-// Public API calls (for server components)
+// Public API calls
 export const getCompanyInfo = async (): Promise<CompanyInfo> => {
   const response = await API.get("/company");
   return response.data;
@@ -174,17 +190,14 @@ export const getServices = async (): Promise<Service[]> => {
   return response.data;
 };
 
-// FIXED: Ensure events are filtered by published status
 export const getEvents = async (): Promise<Event[]> => {
   const response = await API.get("/events");
-  // Filter only published events for public view
   return response.data.filter((event: Event) => event.published !== false);
 };
 
-// FIXED: Public blogs (only published)
+// Public blogs (only published)
 export const getBlogs = async (): Promise<Blog[]> => {
   const response = await API.get("/blogs");
-  // Filter only published blogs for public view
   return response.data.filter((blog: Blog) => blog.published === true);
 };
 
@@ -195,10 +208,8 @@ export const getAdminBlogs = async (): Promise<Blog[]> => {
   return response.data;
 };
 
-// FIXED: Public careers (only published)
 export const getCareers = async (): Promise<Career[]> => {
   const response = await API.get("/careers");
-  // Filter only published careers for public view
   return response.data.filter((career: Career) => career.published === true);
 };
 
@@ -215,28 +226,53 @@ export const adminLogin = async (loginData: LoginData): Promise<AuthResponse> =>
   return response.data;
 };
 
-// FIXED: Event creation with proper FormData handling
+// Enhanced event creation with better error handling
 export const createEvent = async (eventData: FormData | Partial<Event>): Promise<Event> => {
   const clientAPI = createClientAPI();
   
   try {
+    console.log('🔄 Creating event...', {
+      isFormData: eventData instanceof FormData,
+      data: eventData instanceof FormData ? 'FormData' : eventData
+    });
+
+    // Ensure published status
+    if (eventData instanceof FormData) {
+      if (!eventData.has('published')) {
+        eventData.append('published', 'true');
+      }
+    } else {
+      if (eventData.published === undefined) {
+        eventData.published = true;
+      }
+    }
+
     const config = eventData instanceof FormData ? {
       headers: {
         'Content-Type': 'multipart/form-data',
-      }
+      },
+      timeout: 45000 // 45 seconds for file uploads
     } : {};
-    
+
     const response = await clientAPI.post("/events", eventData, config);
+    console.log('✅ Event created successfully');
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.error('❌ Event creation failed:', error.response?.data);
+    
     if (error.response?.status === 400 && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === 413) {
-      throw new Error('Image too large. Please choose a smaller file.');
+      throw new Error('Image too large. Please choose a smaller file (max 5MB).');
+    } else if (error.response?.status === 500) {
+      throw new Error('Server error. Please try again or contact support.');
+    } else if (error.code === 'ECONNABORTED') {
+      throw new Error('Request timeout. Please try again.');
+    } else if (error.response?.data?.errors) {
+      throw new Error(`Validation failed: ${error.response.data.errors.join(', ')}`);
     } else {
-      console.error('Event creation error:', error);
-      throw new Error(`Failed to create event: ${error.message}`);
+      throw new Error(error.response?.data?.message || 'Failed to create event. Please try again.');
     }
   }
 };
@@ -248,20 +284,24 @@ export const updateEvent = async (id: string, eventData: FormData | Partial<Even
     const config = eventData instanceof FormData ? {
       headers: {
         'Content-Type': 'multipart/form-data',
-      }
+      },
+      timeout: 45000
     } : {};
-    
+
     const response = await clientAPI.put(`/events/${id}`, eventData, config);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.error('Event update error:', error.response?.data);
+    
     if (error.response?.status === 400 && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === 413) {
       throw new Error('Image too large. Please choose a smaller file.');
+    } else if (error.response?.status === 500) {
+      throw new Error('Server error. Please try again.');
     } else {
-      console.error('Event update error:', error);
-      throw new Error(`Failed to update event: ${error.message}`);
+      throw new Error(error.response?.data?.message || 'Failed to update event. Please try again.');
     }
   }
 };
@@ -271,12 +311,12 @@ export const deleteEvent = async (id: string): Promise<void> => {
   await clientAPI.delete(`/events/${id}`);
 };
 
-// FIXED: Blog creation with published status
+// Enhanced blog creation
 export const createBlog = async (blogData: FormData | Partial<Blog>): Promise<Blog> => {
   const clientAPI = createClientAPI();
   
   try {
-    // Ensure blog is published by default if not specified
+    // Ensure published status
     if (blogData instanceof FormData) {
       if (!blogData.has('published')) {
         blogData.append('published', 'true');
@@ -286,18 +326,23 @@ export const createBlog = async (blogData: FormData | Partial<Blog>): Promise<Bl
         blogData.published = true;
       }
     }
-    
-    const response = await clientAPI.post("/blogs", blogData);
+
+    const response = await clientAPI.post("/blogs", blogData, {
+      timeout: 45000
+    });
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.error('Blog creation error:', error.response?.data);
+    
     if (error.response?.status === 400 && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === 413) {
       throw new Error('File too large. Please choose a smaller file.');
+    } else if (error.response?.status === 500) {
+      throw new Error('Server error. Please try again.');
     } else {
-      console.error('Blog creation error:', error);
-      throw new Error(`Failed to create blog: ${error.message}`);
+      throw new Error(error.response?.data?.message || 'Failed to create blog. Please try again.');
     }
   }
 };
@@ -306,17 +351,22 @@ export const updateBlog = async (id: string, blogData: FormData | Partial<Blog>)
   const clientAPI = createClientAPI();
   
   try {
-    const response = await clientAPI.put(`/blogs/${id}`, blogData);
+    const response = await clientAPI.put(`/blogs/${id}`, blogData, {
+      timeout: 45000
+    });
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.error('Blog update error:', error.response?.data);
+    
     if (error.response?.status === 400 && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === 413) {
       throw new Error('File too large. Please choose a smaller file.');
+    } else if (error.response?.status === 500) {
+      throw new Error('Server error. Please try again.');
     } else {
-      console.error('Blog update error:', error);
-      throw new Error(`Failed to update blog: ${error.message}`);
+      throw new Error(error.response?.data?.message || 'Failed to update blog. Please try again.');
     }
   }
 };
@@ -326,12 +376,12 @@ export const deleteBlog = async (id: string): Promise<void> => {
   await clientAPI.delete(`/blogs/${id}`);
 };
 
-// FIXED: Career creation with published status
+// Enhanced career creation
 export const createCareer = async (careerData: FormData | Partial<Career>): Promise<Career> => {
   const clientAPI = createClientAPI();
   
   try {
-    // Ensure career is published by default if not specified
+    // Ensure published status
     if (careerData instanceof FormData) {
       if (!careerData.has('published')) {
         careerData.append('published', 'true');
@@ -341,24 +391,28 @@ export const createCareer = async (careerData: FormData | Partial<Career>): Prom
         careerData.published = true;
       }
     }
-    
+
     const config = careerData instanceof FormData ? {
       headers: {
         'Content-Type': 'multipart/form-data',
-      }
+      },
+      timeout: 45000
     } : {};
-    
+
     const response = await clientAPI.post("/careers", careerData, config);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.error('Career creation error:', error.response?.data);
+    
     if (error.response?.status === 400 && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === 413) {
       throw new Error('Image too large. Please choose a smaller file.');
+    } else if (error.response?.status === 500) {
+      throw new Error('Server error. Please try again.');
     } else {
-      console.error('Career creation error:', error);
-      throw new Error(`Failed to create career: ${error.message}`);
+      throw new Error(error.response?.data?.message || 'Failed to create career. Please try again.');
     }
   }
 };
@@ -370,20 +424,24 @@ export const updateCareer = async (id: string, careerData: FormData | Partial<Ca
     const config = careerData instanceof FormData ? {
       headers: {
         'Content-Type': 'multipart/form-data',
-      }
+      },
+      timeout: 45000
     } : {};
-    
+
     const response = await clientAPI.put(`/careers/${id}`, careerData, config);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.error('Career update error:', error.response?.data);
+    
     if (error.response?.status === 400 && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === 413) {
       throw new Error('Image too large. Please choose a smaller file.');
+    } else if (error.response?.status === 500) {
+      throw new Error('Server error. Please try again.');
     } else {
-      console.error('Career update error:', error);
-      throw new Error(`Failed to update career: ${error.message}`);
+      throw new Error(error.response?.data?.message || 'Failed to update career. Please try again.');
     }
   }
 };
@@ -393,7 +451,7 @@ export const deleteCareer = async (id: string): Promise<void> => {
   await clientAPI.delete(`/careers/${id}`);
 };
 
-// Rest of your functions remain the same...
+// Contact functions remain the same
 export const submitContactForm = async (formData: ContactFormData): Promise<void> => {
   try {
     const response = await API.post("/contact", formData);
@@ -460,6 +518,7 @@ export const deleteContact = async (id: string): Promise<void> => {
   }
 };
 
+// Enhanced URL helpers
 export const ensureAbsoluteImageUrl = (url: string | undefined): string | undefined => {
   if (!url) return undefined;
   
@@ -467,11 +526,11 @@ export const ensureAbsoluteImageUrl = (url: string | undefined): string | undefi
     return url;
   }
   
-  const baseURL = process.env.NODE_ENV === 'production' 
+  const baseURL = isProduction 
     ? 'https://ganu-be.vercel.app' 
     : 'http://localhost:8080';
   
-  return `${baseURL}${url}`;
+  return `${baseURL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
 export const ensureAbsoluteUrl = (url: string | undefined): string | undefined => {
@@ -481,11 +540,29 @@ export const ensureAbsoluteUrl = (url: string | undefined): string | undefined =
     return url;
   }
   
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${url}`;
+  if (isClient) {
+    return `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`;
   } else {
-    const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
-    return `${baseURL}${url}`;
+    const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || 
+      (isProduction ? 'https://ganu-be.vercel.app' : 'http://localhost:8080');
+    return `${baseURL}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+};
+
+// Test function to check backend connectivity
+export const testBackendConnection = async (): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await API.get('/health');
+    return { 
+      success: true, 
+      message: `Backend is connected. Database: ${response.data.database}` 
+    };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    return { 
+      success: false, 
+      message: `Backend connection failed: ${error.message}` 
+    };
   }
 };
 
