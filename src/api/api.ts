@@ -22,6 +22,12 @@ const createClientAPI = () => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      
+      // Remove Content-Type for FormData to let browser set it with boundary
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+      }
+      
       return config;
     });
 
@@ -43,7 +49,7 @@ const createClientAPI = () => {
   return clientAPI;
 };
 
-// TypeScript interfaces
+// TypeScript interfaces (keep your existing interfaces the same)
 export interface CompanyInfo {
   id: number;
   name: string;
@@ -69,9 +75,10 @@ export interface Event {
   date: string;
   location: string;
   imageUrl?: string;
-  imageFileName?: string; // New field
+  imageFileName?: string;
   createdAt?: string;
   updatedAt?: string;
+  published?: boolean; // ADD THIS FIELD
 }
 
 export interface ContactFormData {
@@ -91,24 +98,19 @@ export interface Contact {
   read: boolean;
 }
 
-// Add helper function for contact IDs
-const getContactId = (contact: Contact): string => {
-  return contact.id || contact._id || '';
-};
-
 export interface Blog {
   id?: string;
   _id?: string;
   title: string;
-  content?: string; // Make optional for PDF posts
+  content?: string;
   excerpt?: string;
   author: string;
   imageUrl?: string;
-  pdfUrl?: string; // New field
-  pdfFileName?: string; // New field
-  isPdfPost?: boolean; // New field
-  fileSize?: string; // New field
-  published: boolean;
+  pdfUrl?: string;
+  pdfFileName?: string;
+  isPdfPost?: boolean;
+  fileSize?: string;
+  published: boolean; // MAKE SURE THIS EXISTS
   createdAt?: string;
   updatedAt?: string;
 }
@@ -123,16 +125,11 @@ export interface Career {
   type: 'full-time' | 'part-time' | 'contract';
   salary?: string;
   applicationDeadline: string;
-  imageUrl?: string; // New field
-  published: boolean;
+  imageUrl?: string;
+  published: boolean; // ADD THIS FIELD
   createdAt: string;
   updatedAt?: string;
 }
-
-// Add a helper function for career IDs
-const getCareerId = (career: Career): string => {
-  return career.id || career._id || '';
-};
 
 export interface LoginData {
   email: string;
@@ -149,14 +146,21 @@ export interface AuthResponse {
   };
 }
 
-// Helper function to get the actual event ID (handles both id and _id)
+// Helper functions
 const getEventId = (event: Event): string => {
   return event.id || event._id || '';
 };
 
-// Helper function to get the actual blog ID (handles both id and _id)
 const getBlogId = (blog: Blog): string => {
   return blog.id || blog._id || '';
+};
+
+const getCareerId = (career: Career): string => {
+  return career.id || career._id || '';
+};
+
+const getContactId = (contact: Contact): string => {
+  return contact.id || contact._id || '';
 };
 
 // Public API calls (for server components)
@@ -170,15 +174,18 @@ export const getServices = async (): Promise<Service[]> => {
   return response.data;
 };
 
+// FIXED: Ensure events are filtered by published status
 export const getEvents = async (): Promise<Event[]> => {
   const response = await API.get("/events");
-  return response.data;
+  // Filter only published events for public view
+  return response.data.filter((event: Event) => event.published !== false);
 };
 
-// Public blogs (only published)
+// FIXED: Public blogs (only published)
 export const getBlogs = async (): Promise<Blog[]> => {
   const response = await API.get("/blogs");
-  return response.data;
+  // Filter only published blogs for public view
+  return response.data.filter((blog: Blog) => blog.published === true);
 };
 
 // Admin blogs (all blogs including drafts)
@@ -188,9 +195,11 @@ export const getAdminBlogs = async (): Promise<Blog[]> => {
   return response.data;
 };
 
+// FIXED: Public careers (only published)
 export const getCareers = async (): Promise<Career[]> => {
   const response = await API.get("/careers");
-  return response.data;
+  // Filter only published careers for public view
+  return response.data.filter((career: Career) => career.published === true);
 };
 
 export const getAdminCareers = async (): Promise<Career[]> => {
@@ -206,15 +215,18 @@ export const adminLogin = async (loginData: LoginData): Promise<AuthResponse> =>
   return response.data;
 };
 
+// FIXED: Event creation with proper FormData handling
 export const createEvent = async (eventData: FormData | Partial<Event>): Promise<Event> => {
   const clientAPI = createClientAPI();
   
   try {
-    const response = await clientAPI.post("/events", eventData, {
-      headers: eventData instanceof FormData ? {
+    const config = eventData instanceof FormData ? {
+      headers: {
         'Content-Type': 'multipart/form-data',
-      } : {}
-    });
+      }
+    } : {};
+    
+    const response = await clientAPI.post("/events", eventData, config);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
@@ -223,7 +235,8 @@ export const createEvent = async (eventData: FormData | Partial<Event>): Promise
     } else if (error.response?.status === 413) {
       throw new Error('Image too large. Please choose a smaller file.');
     } else {
-      throw new Error('Failed to create event. Please try again.');
+      console.error('Event creation error:', error);
+      throw new Error(`Failed to create event: ${error.message}`);
     }
   }
 };
@@ -232,11 +245,13 @@ export const updateEvent = async (id: string, eventData: FormData | Partial<Even
   const clientAPI = createClientAPI();
   
   try {
-    const response = await clientAPI.put(`/events/${id}`, eventData, {
-      headers: eventData instanceof FormData ? {
+    const config = eventData instanceof FormData ? {
+      headers: {
         'Content-Type': 'multipart/form-data',
-      } : {}
-    });
+      }
+    } : {};
+    
+    const response = await clientAPI.put(`/events/${id}`, eventData, config);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
@@ -245,7 +260,8 @@ export const updateEvent = async (id: string, eventData: FormData | Partial<Even
     } else if (error.response?.status === 413) {
       throw new Error('Image too large. Please choose a smaller file.');
     } else {
-      throw new Error('Failed to update event. Please try again.');
+      console.error('Event update error:', error);
+      throw new Error(`Failed to update event: ${error.message}`);
     }
   }
 };
@@ -255,11 +271,22 @@ export const deleteEvent = async (id: string): Promise<void> => {
   await clientAPI.delete(`/events/${id}`);
 };
 
-// Update createBlog and updateBlog to handle FormData
+// FIXED: Blog creation with published status
 export const createBlog = async (blogData: FormData | Partial<Blog>): Promise<Blog> => {
   const clientAPI = createClientAPI();
   
   try {
+    // Ensure blog is published by default if not specified
+    if (blogData instanceof FormData) {
+      if (!blogData.has('published')) {
+        blogData.append('published', 'true');
+      }
+    } else {
+      if (blogData.published === undefined) {
+        blogData.published = true;
+      }
+    }
+    
     const response = await clientAPI.post("/blogs", blogData);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -269,7 +296,8 @@ export const createBlog = async (blogData: FormData | Partial<Blog>): Promise<Bl
     } else if (error.response?.status === 413) {
       throw new Error('File too large. Please choose a smaller file.');
     } else {
-      throw new Error('Failed to create blog. Please try again.');
+      console.error('Blog creation error:', error);
+      throw new Error(`Failed to create blog: ${error.message}`);
     }
   }
 };
@@ -287,7 +315,8 @@ export const updateBlog = async (id: string, blogData: FormData | Partial<Blog>)
     } else if (error.response?.status === 413) {
       throw new Error('File too large. Please choose a smaller file.');
     } else {
-      throw new Error('Failed to update blog. Please try again.');
+      console.error('Blog update error:', error);
+      throw new Error(`Failed to update blog: ${error.message}`);
     }
   }
 };
@@ -297,15 +326,29 @@ export const deleteBlog = async (id: string): Promise<void> => {
   await clientAPI.delete(`/blogs/${id}`);
 };
 
+// FIXED: Career creation with published status
 export const createCareer = async (careerData: FormData | Partial<Career>): Promise<Career> => {
   const clientAPI = createClientAPI();
   
   try {
-    const response = await clientAPI.post("/careers", careerData, {
-      headers: careerData instanceof FormData ? {
+    // Ensure career is published by default if not specified
+    if (careerData instanceof FormData) {
+      if (!careerData.has('published')) {
+        careerData.append('published', 'true');
+      }
+    } else {
+      if (careerData.published === undefined) {
+        careerData.published = true;
+      }
+    }
+    
+    const config = careerData instanceof FormData ? {
+      headers: {
         'Content-Type': 'multipart/form-data',
-      } : {}
-    });
+      }
+    } : {};
+    
+    const response = await clientAPI.post("/careers", careerData, config);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
@@ -314,7 +357,8 @@ export const createCareer = async (careerData: FormData | Partial<Career>): Prom
     } else if (error.response?.status === 413) {
       throw new Error('Image too large. Please choose a smaller file.');
     } else {
-      throw new Error('Failed to create career. Please try again.');
+      console.error('Career creation error:', error);
+      throw new Error(`Failed to create career: ${error.message}`);
     }
   }
 };
@@ -323,11 +367,13 @@ export const updateCareer = async (id: string, careerData: FormData | Partial<Ca
   const clientAPI = createClientAPI();
   
   try {
-    const response = await clientAPI.put(`/careers/${id}`, careerData, {
-      headers: careerData instanceof FormData ? {
+    const config = careerData instanceof FormData ? {
+      headers: {
         'Content-Type': 'multipart/form-data',
-      } : {}
-    });
+      }
+    } : {};
+    
+    const response = await clientAPI.put(`/careers/${id}`, careerData, config);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
@@ -336,7 +382,8 @@ export const updateCareer = async (id: string, careerData: FormData | Partial<Ca
     } else if (error.response?.status === 413) {
       throw new Error('Image too large. Please choose a smaller file.');
     } else {
-      throw new Error('Failed to update career. Please try again.');
+      console.error('Career update error:', error);
+      throw new Error(`Failed to update career: ${error.message}`);
     }
   }
 };
@@ -346,6 +393,7 @@ export const deleteCareer = async (id: string): Promise<void> => {
   await clientAPI.delete(`/careers/${id}`);
 };
 
+// Rest of your functions remain the same...
 export const submitContactForm = async (formData: ContactFormData): Promise<void> => {
   try {
     const response = await API.post("/contact", formData);
@@ -364,7 +412,6 @@ export const submitContactForm = async (formData: ContactFormData): Promise<void
   }
 };
 
-// Admin contact functions with better error handling
 export const getAdminContacts = async (): Promise<Contact[]> => {
   try {
     const clientAPI = createClientAPI();
@@ -413,17 +460,13 @@ export const deleteContact = async (id: string): Promise<void> => {
   }
 };
 
-// Helper function to ensure image URLs are absolute - ADD EXPORT HERE
 export const ensureAbsoluteImageUrl = (url: string | undefined): string | undefined => {
   if (!url) return undefined;
   
-  // If it's already an absolute URL, return as is
   if (url.startsWith('http')) {
     return url;
   }
   
-  // If it's a relative URL, prepend the base URL
-  // For production, you might want to use environment variables
   const baseURL = process.env.NODE_ENV === 'production' 
     ? 'https://ganu-be.vercel.app' 
     : 'http://localhost:8080';
@@ -431,22 +474,16 @@ export const ensureAbsoluteImageUrl = (url: string | undefined): string | undefi
   return `${baseURL}${url}`;
 };
 
-// Also export ensureAbsoluteUrl for PDF URLs if needed
 export const ensureAbsoluteUrl = (url: string | undefined): string | undefined => {
   if (!url) return undefined;
   
-  // If it's already an absolute URL, return as is
   if (url.startsWith('http')) {
     return url;
   }
   
-  // For relative URLs, the backend should already provide absolute URLs
-  // But as a fallback, we can construct the URL
   if (typeof window !== 'undefined') {
-    // Client-side: use current origin
     return `${window.location.origin}${url}`;
   } else {
-    // Server-side: use environment variable or default
     const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
     return `${baseURL}${url}`;
   }
