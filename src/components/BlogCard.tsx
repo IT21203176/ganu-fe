@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import Link from "next/link";
 import { Blog } from "@/api/api";
 
 interface BlogCardProps {
@@ -8,7 +6,6 @@ interface BlogCardProps {
 }
 
 export default function BlogCard({ blog }: BlogCardProps) {
-  const [showContentModal, setShowContentModal] = useState(false);
   const blogId = blog.id || blog._id;
   
   // Construct full URL for PDF files
@@ -20,197 +17,96 @@ export default function BlogCard({ blog }: BlogCardProps) {
     return `http://localhost:8080${pdfUrl}`;
   };
 
-  const openContentModal = () => {
-    setShowContentModal(true);
-  };
-
-  const closeContentModal = () => {
-    setShowContentModal(false);
-  };
-
-  // Handle click outside the modal to close
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      closeContentModal();
-    }
-  };
-
-  // Handle escape key to close modal
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      closeContentModal();
-    }
-  };
-
   return (
-    <>
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
-        {blog.imageUrl && !blog.isPdfPost && (
-          <div className="h-48 overflow-hidden">
-            <img
-              src={blog.imageUrl}
-              alt={blog.title}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-        )}
-        
-        {blog.isPdfPost && (
-          <div className="h-48 bg-gradient-to-br from-red-50 to-red-100 flex flex-col items-center justify-center p-4 border-b border-red-200">
-            <svg className="w-16 h-16 text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span className="text-red-700 font-semibold text-center">PDF Document</span>
-            {blog.fileSize && (
-              <p className="text-red-600 text-sm mt-1">{blog.fileSize}</p>
-            )}
-            {blog.pdfFileName && (
-              <p className="text-red-500 text-xs mt-1 text-center truncate max-w-full px-2">
-                {blog.pdfFileName}
-              </p>
-            )}
-          </div>
-        )}
-        
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500 font-medium">{blog.author}</span>
-            <span className="text-sm text-gray-500">
-              {blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : 'N/A'}
-            </span>
-          </div>
-          
-          <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
-            {blog.title}
-          </h3>
-          
-          {blog.excerpt && !blog.isPdfPost && (
-            <p className="text-gray-600 mb-4 line-clamp-3">
-              {blog.excerpt}
-            </p>
-          )}
-
-          {blog.isPdfPost && blog.excerpt && (
-            <p className="text-gray-600 mb-4 line-clamp-3">
-              {blog.excerpt}
-            </p>
-          )}
-          
-          {blog.isPdfPost ? (
-            <div className="flex flex-col sm:flex-row gap-2">
-              <a
-                href={getPdfUrl(blog.pdfUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 px-4 py-3 rounded-lg text-center font-semibold transition-colors flex items-center justify-center"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                View PDF
-              </a>
-              <a
-                href={getPdfUrl(blog.pdfUrl)}
-                download={blog.pdfFileName || 'document.pdf'}
-                className="flex-1 bg-desertSun text-white hover:bg-burntOrange px-4 py-3 rounded-lg text-center font-semibold transition-colors flex items-center justify-center"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download
-              </a>
-            </div>
-          ) : (
-            <button
-              onClick={openContentModal}
-              className="inline-flex items-center text-desertSun hover:text-burntOrange font-semibold transition-colors group focus:outline-none focus:ring-2 focus:ring-desertSun focus:ring-opacity-50 rounded px-2 py-1"
-            >
-              Read More
-              <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Blog Content Modal */}
-      {showContentModal && !blog.isPdfPost && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
-          onClick={handleBackdropClick}
-          onKeyDown={handleKeyDown}
-          tabIndex={-1}
-        >
-          <div className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">            
-
-            {/* Blog Image */}
-            {blog.imageUrl && (
-              <div className="h-64 overflow-hidden flex-shrink-0">
-                <img
-                  src={blog.imageUrl}
-                  alt={blog.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-8">
-                {/* Blog Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <span className="text-sm text-gray-500 font-medium">{blog.author}</span>
-                    <span className="text-sm text-gray-500 mx-2">•</span>
-                    <span className="text-sm text-gray-500">
-                      {blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Blog Title */}
-                <h1 className="text-3xl font-bold text-gray-900 mb-6">
-                  {blog.title}
-                </h1>
-
-                {/* Blog Content - Scrollable */}
-                {blog.content ? (
-                  <div className="prose prose-lg max-w-none">
-                    <div 
-                      className="text-gray-700 leading-relaxed text-justify"
-                      dangerouslySetInnerHTML={{ __html: blog.content }}
-                    />
-                  </div>
-                ) : blog.excerpt ? (
-                  <div className="prose prose-lg max-w-none">
-                    <p className="text-gray-700 leading-relaxed text-justify text-lg">
-                      {blog.excerpt}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">
-                    No content available for this blog post.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Footer with Close Button */}
-            <div className="border-t border-gray-200 bg-gray-50 px-8 py-4 flex-shrink-0">
-              <div className="flex justify-end">
-                <button
-                  onClick={closeContentModal}
-                  className="bg-desertSun hover:bg-burntOrange text-white px-6 py-2 rounded-lg font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-desertSun focus:ring-opacity-50"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+      {blog.imageUrl && !blog.isPdfPost && (
+        <div className="h-48 overflow-hidden">
+          <img
+            src={blog.imageUrl}
+            alt={blog.title}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          />
         </div>
       )}
-    </>
+      
+      {blog.isPdfPost && (
+        <div className="h-48 bg-gradient-to-br from-red-50 to-red-100 flex flex-col items-center justify-center p-4 border-b border-red-200">
+          <svg className="w-16 h-16 text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span className="text-red-700 font-semibold text-center">PDF Document</span>
+          {blog.fileSize && (
+            <p className="text-red-600 text-sm mt-1">{blog.fileSize}</p>
+          )}
+          {blog.pdfFileName && (
+            <p className="text-red-500 text-xs mt-1 text-center truncate max-w-full px-2">
+              {blog.pdfFileName}
+            </p>
+          )}
+        </div>
+      )}
+      
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm text-gray-500 font-medium">{blog.author}</span>
+          <span className="text-sm text-gray-500">
+            {blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : 'N/A'}
+          </span>
+        </div>
+        
+        <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+          {blog.title}
+        </h3>
+        
+        {blog.excerpt && !blog.isPdfPost && (
+          <p className="text-gray-600 mb-4 line-clamp-3">
+            {blog.excerpt}
+          </p>
+        )}
+
+        {blog.isPdfPost && blog.excerpt && (
+          <p className="text-gray-600 mb-4 line-clamp-3">
+            {blog.excerpt}
+          </p>
+        )}
+        
+        {blog.isPdfPost ? (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <a
+              href={getPdfUrl(blog.pdfUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 px-4 py-3 rounded-lg text-center font-semibold transition-colors flex items-center justify-center"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              View PDF
+            </a>
+            <a
+              href={getPdfUrl(blog.pdfUrl)}
+              download={blog.pdfFileName || 'document.pdf'}
+              className="flex-1 bg-desertSun text-white hover:bg-burntOrange px-4 py-3 rounded-lg text-center font-semibold transition-colors flex items-center justify-center"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download
+            </a>
+          </div>
+        ) : (
+          <Link
+            href={`/blogs/${blogId}`}
+            className="inline-flex items-center text-desertSun hover:text-burntOrange font-semibold transition-colors group"
+          >
+            Read More
+            <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }
