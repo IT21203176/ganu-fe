@@ -157,6 +157,7 @@ export default function ContactUs() {
                   <div>
                     <h3 className="text-white font-semibold text-lg mb-1">Email Address</h3>
                     <p className="text-gray-300">service@ganuprofessional.lk</p>
+                    <p className="text-gray-300">ganuprofessional@gmail.com</p>
                   </div>
                 </div>
 
@@ -291,7 +292,7 @@ export default function ContactUs() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-desertSun mb-4">Find Our Office</h2>
-            <p className="text-gray-300 text-xl">Visit us at our conveniently located office in Colombo</p>
+            <p className="text-gray-300 text-xl">Visit us at our conveniently located office in Hokandara</p>
           </motion.div>
 
           <motion.div
@@ -301,15 +302,47 @@ export default function ContactUs() {
             viewport={{ once: true }}
             className="bg-white rounded-2xl shadow-2xl overflow-hidden"
           >
-            {/* Replace this with your actual map embed */}
-            <div className="w-full h-96 bg-gray-200 flex items-center justify-center">
-              <div className="text-center">
-                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <p className="text-gray-600">Interactive Map</p>
-                <p className="text-gray-500 text-sm mt-2">123 Business Street, Colombo, Sri Lanka</p>
+            {/* Google Maps Embed */}
+            <div className="w-full h-96">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3961.207741666111!2d79.94833697599698!3d6.872916093139741!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae250e4c8d5bfc9%3A0x4a7d907b310e0b4d!2s94%2F6%20Hokandara%20Rd%2C%20Hokandara%201018!5e0!3m2!1sen!2slk!4v1700000000000!5m2!1sen!2slk"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Ganu Professional Office Location"
+                className="w-full h-full"
+              ></iframe>
+            </div>
+            
+            {/* Map Footer with Address */}
+            <div className="bg-midnightBlue p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-desertSun rounded-full flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold">Our Location</h3>
+                    <p className="text-gray-300 text-sm">No. 94/6, Hokandara East, Hokandara, Sri Lanka, 10118</p>
+                  </div>
+                </div>
+                <a
+                  href="https://maps.app.goo.gl/Vf1QUi6iWVkggHU89"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-desertSun hover:bg-burntOrange text-white font-semibold py-2 px-6 rounded-lg transition-colors flex items-center space-x-2"
+                >
+                  <span>Open in Maps</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
               </div>
             </div>
           </motion.div>

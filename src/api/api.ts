@@ -3,6 +3,7 @@ import axios from "axios";
 // Base API configuration without interceptors (for server components)
 const API = axios.create({
   baseURL: "https://ganu-be.vercel.app/api", 
+  // baseURL: "http://localhost:8080/api", 
   headers: { "Content-Type": "application/json" },
 });
 
@@ -10,6 +11,7 @@ const API = axios.create({
 const createClientAPI = () => {
   const clientAPI = axios.create({
     baseURL: "https://ganu-be.vercel.app/api", 
+    //baseURL: "http://localhost:8080/api", 
     headers: { "Content-Type": "application/json" },
   });
 
@@ -67,6 +69,7 @@ export interface Event {
   date: string;
   location: string;
   imageUrl?: string;
+  imageFileName?: string; // New field
   createdAt?: string;
   updatedAt?: string;
 }
@@ -120,6 +123,7 @@ export interface Career {
   type: 'full-time' | 'part-time' | 'contract';
   salary?: string;
   applicationDeadline: string;
+  imageUrl?: string; // New field
   published: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -202,16 +206,48 @@ export const adminLogin = async (loginData: LoginData): Promise<AuthResponse> =>
   return response.data;
 };
 
-export const createEvent = async (eventData: Partial<Event>): Promise<Event> => {
+export const createEvent = async (eventData: FormData | Partial<Event>): Promise<Event> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.post("/events", eventData);
-  return response.data;
+  
+  try {
+    const response = await clientAPI.post("/events", eventData, {
+      headers: eventData instanceof FormData ? {
+        'Content-Type': 'multipart/form-data',
+      } : {}
+    });
+    return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 400 && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 413) {
+      throw new Error('Image too large. Please choose a smaller file.');
+    } else {
+      throw new Error('Failed to create event. Please try again.');
+    }
+  }
 };
 
-export const updateEvent = async (id: string, eventData: Partial<Event>): Promise<Event> => {
+export const updateEvent = async (id: string, eventData: FormData | Partial<Event>): Promise<Event> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.put(`/events/${id}`, eventData);
-  return response.data;
+  
+  try {
+    const response = await clientAPI.put(`/events/${id}`, eventData, {
+      headers: eventData instanceof FormData ? {
+        'Content-Type': 'multipart/form-data',
+      } : {}
+    });
+    return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 400 && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 413) {
+      throw new Error('Image too large. Please choose a smaller file.');
+    } else {
+      throw new Error('Failed to update event. Please try again.');
+    }
+  }
 };
 
 export const deleteEvent = async (id: string): Promise<void> => {
@@ -261,16 +297,48 @@ export const deleteBlog = async (id: string): Promise<void> => {
   await clientAPI.delete(`/blogs/${id}`);
 };
 
-export const createCareer = async (careerData: Partial<Career>): Promise<Career> => {
+export const createCareer = async (careerData: FormData | Partial<Career>): Promise<Career> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.post("/careers", careerData);
-  return response.data;
+  
+  try {
+    const response = await clientAPI.post("/careers", careerData, {
+      headers: careerData instanceof FormData ? {
+        'Content-Type': 'multipart/form-data',
+      } : {}
+    });
+    return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 400 && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 413) {
+      throw new Error('Image too large. Please choose a smaller file.');
+    } else {
+      throw new Error('Failed to create career. Please try again.');
+    }
+  }
 };
 
-export const updateCareer = async (id: string, careerData: Partial<Career>): Promise<Career> => {
+export const updateCareer = async (id: string, careerData: FormData | Partial<Career>): Promise<Career> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.put(`/careers/${id}`, careerData);
-  return response.data;
+  
+  try {
+    const response = await clientAPI.put(`/careers/${id}`, careerData, {
+      headers: careerData instanceof FormData ? {
+        'Content-Type': 'multipart/form-data',
+      } : {}
+    });
+    return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 400 && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 413) {
+      throw new Error('Image too large. Please choose a smaller file.');
+    } else {
+      throw new Error('Failed to update career. Please try again.');
+    }
+  }
 };
 
 export const deleteCareer = async (id: string): Promise<void> => {
@@ -342,6 +410,45 @@ export const deleteContact = async (id: string): Promise<void> => {
     } else {
       throw new Error('Failed to delete contact.');
     }
+  }
+};
+
+// Helper function to ensure image URLs are absolute - ADD EXPORT HERE
+export const ensureAbsoluteImageUrl = (url: string | undefined): string | undefined => {
+  if (!url) return undefined;
+  
+  // If it's already an absolute URL, return as is
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  // If it's a relative URL, prepend the base URL
+  // For production, you might want to use environment variables
+  const baseURL = process.env.NODE_ENV === 'production' 
+    ? 'https://ganu-be.vercel.app' 
+    : 'http://localhost:8080';
+  
+  return `${baseURL}${url}`;
+};
+
+// Also export ensureAbsoluteUrl for PDF URLs if needed
+export const ensureAbsoluteUrl = (url: string | undefined): string | undefined => {
+  if (!url) return undefined;
+  
+  // If it's already an absolute URL, return as is
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  // For relative URLs, the backend should already provide absolute URLs
+  // But as a fallback, we can construct the URL
+  if (typeof window !== 'undefined') {
+    // Client-side: use current origin
+    return `${window.location.origin}${url}`;
+  } else {
+    // Server-side: use environment variable or default
+    const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://ganu-be.vercel.app';
+    return `${baseURL}${url}`;
   }
 };
 

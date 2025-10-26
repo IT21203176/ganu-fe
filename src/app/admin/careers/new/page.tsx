@@ -7,6 +7,8 @@ import { createCareer, Career } from "@/api/api";
 export default function CreateCareer() {
   const [loading, setLoading] = useState(false);
   const [requirements, setRequirements] = useState<string[]>(['']);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Career>>({
     title: '',
     description: '',
@@ -23,16 +25,29 @@ export default function CreateCareer() {
     setLoading(true);
 
     try {
-      const careerData = {
-        ...formData,
-        requirements: requirements.filter(req => req.trim() !== '')
-      };
-      await createCareer(careerData);
+      const careerFormData = new FormData();
+      
+      // Append text fields
+      careerFormData.append('title', formData.title || '');
+      careerFormData.append('description', formData.description || '');
+      careerFormData.append('location', formData.location || '');
+      careerFormData.append('type', formData.type || 'full-time');
+      careerFormData.append('salary', formData.salary || '');
+      careerFormData.append('applicationDeadline', formData.applicationDeadline || '');
+      careerFormData.append('published', formData.published?.toString() || 'true');
+      careerFormData.append('requirements', JSON.stringify(requirements.filter(req => req.trim() !== '')));
+      
+      // Append image if selected
+      if (image) {
+        careerFormData.append('image', image);
+      }
+
+      await createCareer(careerFormData);
       router.push('/admin/careers');
       router.refresh(); // Refresh the page to show updated list
     } catch (error) {
       console.error('Error creating career:', error);
-      alert('Error creating career');
+      alert(error instanceof Error ? error.message : 'Error creating career');
     } finally {
       setLoading(false);
     }
@@ -44,6 +59,37 @@ export default function CreateCareer() {
       ...formData,
       [e.target.name]: value
     });
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (PNG, JPG, JPEG, etc.)');
+        return;
+      }
+      
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      
+      setImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    setImagePreview(null);
   };
 
   const handleRequirementChange = (index: number, value: string) => {
@@ -75,6 +121,69 @@ export default function CreateCareer() {
       <div className="bg-white rounded-lg shadow-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 gap-6">
+            {/* Image Upload Section */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Career Image (Optional)
+              </label>
+              <div className="mt-1 flex items-center">
+                {imagePreview ? (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Career preview"
+                      className="h-32 w-32 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+                    <div className="space-y-1 text-center">
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <div className="flex text-sm text-gray-600">
+                        <label
+                          htmlFor="image-upload"
+                          className="relative cursor-pointer bg-white rounded-md font-medium text-desertSun hover:text-burntOrange focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-desertSun"
+                        >
+                          <span>Upload an image</span>
+                          <input
+                            id="image-upload"
+                            name="image"
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            onChange={handleImageChange}
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                 Job Title *

@@ -23,10 +23,10 @@ export default async function EventsPage() {
       <section className="pt-32 pb-20 bg-gradient-to-br from-midnightBlue via-navyBlue to-black">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            Events & Workshops
+            News & Events
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Join us for exciting events, workshops, and networking opportunities designed to help you grow professionally.
+            Join us for exciting events, news, and networking opportunities designed to help you grow professionally.
           </p>
         </div>
       </section>
@@ -58,10 +58,10 @@ export default async function EventsPage() {
             <>
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-midnightBlue mb-4">
-                  Upcoming Events
+                  News & Events
                 </h2>
                 <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                  Discover our curated events designed to provide valuable insights and networking opportunities.
+                  Stay informed with our latest updates, announcements, and industry insights.
                 </p>
               </div>
 
@@ -201,11 +201,6 @@ function EventCard({ event, isPast = false }: { event: Event; isPast?: boolean }
 
         {/* Action Buttons */}
         <div className="flex space-x-3">
-          {!isPast && isUpcoming && (
-            <button className="flex-1 bg-desertSun hover:bg-burntOrange text-white py-2 px-4 rounded-lg transition-colors font-semibold text-sm text-center">
-              Register Now
-            </button>
-          )}
           
           <button className="flex-1 border-2 border-midnightBlue text-midnightBlue hover:bg-midnightBlue hover:text-white py-2 px-4 rounded-lg transition-colors font-semibold text-sm text-center">
             Learn More
