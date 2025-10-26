@@ -1,16 +1,17 @@
 import axios from "axios";
-import { apiConfig } from "@/config/api";
 
 // Base API configuration without interceptors (for server components)
 const API = axios.create({
-  baseURL: apiConfig.BASE_URL,
+  baseURL: "https://ganu-be.vercel.app/api", 
+  // baseURL: "http://localhost:8080/api", 
   headers: { "Content-Type": "application/json" },
 });
 
 // Client-side API with interceptors (for client components)
 const createClientAPI = () => {
   const clientAPI = axios.create({
-    baseURL: apiConfig.BASE_URL,
+    baseURL: "https://ganu-be.vercel.app/api", 
+    //baseURL: "http://localhost:8080/api", 
     headers: { "Content-Type": "application/json" },
   });
 
@@ -67,9 +68,8 @@ export interface Event {
   description: string;
   date: string;
   location: string;
-  type: "event" | "news";
   imageUrl?: string;
-  imageFileName?: string;
+  imageFileName?: string; // New field
   createdAt?: string;
   updatedAt?: string;
 }
@@ -100,14 +100,14 @@ export interface Blog {
   id?: string;
   _id?: string;
   title: string;
-  content?: string;
+  content?: string; // Make optional for PDF posts
   excerpt?: string;
   author: string;
   imageUrl?: string;
-  pdfUrl?: string;
-  pdfFileName?: string;
-  isPdfPost?: boolean;
-  fileSize?: string;
+  pdfUrl?: string; // New field
+  pdfFileName?: string; // New field
+  isPdfPost?: boolean; // New field
+  fileSize?: string; // New field
   published: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -123,7 +123,7 @@ export interface Career {
   type: 'full-time' | 'part-time' | 'contract';
   salary?: string;
   applicationDeadline: string;
-  imageUrl?: string;
+  imageUrl?: string; // New field
   published: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -172,12 +172,6 @@ export const getServices = async (): Promise<Service[]> => {
 
 export const getEvents = async (): Promise<Event[]> => {
   const response = await API.get("/events");
-  return response.data;
-};
-
-// Get events by type
-export const getEventsByType = async (type: "event" | "news"): Promise<Event[]> => {
-  const response = await API.get(`/events/type/${type}`);
   return response.data;
 };
 
@@ -419,7 +413,7 @@ export const deleteContact = async (id: string): Promise<void> => {
   }
 };
 
-// Helper function to ensure image URLs are absolute
+// Helper function to ensure image URLs are absolute - ADD EXPORT HERE
 export const ensureAbsoluteImageUrl = (url: string | undefined): string | undefined => {
   if (!url) return undefined;
   
@@ -429,7 +423,11 @@ export const ensureAbsoluteImageUrl = (url: string | undefined): string | undefi
   }
   
   // If it's a relative URL, prepend the base URL
-  const baseURL = apiConfig.BASE_URL;
+  // For production, you might want to use environment variables
+  const baseURL = process.env.NODE_ENV === 'production' 
+    ? 'https://ganu-be.vercel.app' 
+    : 'http://localhost:8080';
+  
   return `${baseURL}${url}`;
 };
 
@@ -448,11 +446,11 @@ export const ensureAbsoluteUrl = (url: string | undefined): string | undefined =
     // Client-side: use current origin
     return `${window.location.origin}${url}`;
   } else {
-    // Server-side: use the configured base URL
-    return `${apiConfig.BASE_URL}${url}`;
+    // Server-side: use environment variable or default
+    const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+    return `${baseURL}${url}`;
   }
 };
 
-// Export the config for debugging purposes
-export { apiConfig, getEventId, getBlogId, getCareerId, getContactId };
+export { getEventId, getBlogId, getCareerId, getContactId };
 export default API;
