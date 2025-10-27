@@ -1,13 +1,33 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getEvents, Event } from "@/api/api";
+import { getEvents, Event, debugEvents } from "@/api/api";
 
 async function getEventsData(): Promise<Event[]> {
   try {
+    console.log('🔄 Fetching events data...');
+    
+    // Test the debug endpoint first
+    try {
+      const debugData = await debugEvents();
+      console.log('🔍 Debug events data:', debugData);
+    } catch (debugError) {
+      console.log('⚠️ Debug endpoint not available, continuing...');
+    }
+    
     const events = await getEvents();
+    console.log(`✅ Successfully fetched ${events.length} events`);
     return events || [];
   } catch (error) {
-    console.error('Error fetching events:', error);
+    console.error('❌ Error fetching events:', error);
+    
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+    }
+    
     return [];
   }
 }
@@ -18,6 +38,10 @@ export default async function EventsPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
+
+      <div className="fixed top-20 left-0 right-0 bg-yellow-500 text-black text-center py-2 text-sm z-50">
+        Debug: Loaded {events.length} events | {new Date().toLocaleTimeString()}
+      </div>
       
       {/* Hero Section */}
       <section className="pt-32 pb-20 bg-gradient-to-br from-midnightBlue via-navyBlue to-black">
