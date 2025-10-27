@@ -3,22 +3,14 @@ import axios from "axios";
 // Base API configuration without interceptors (for server components)
 const API = axios.create({
   baseURL: "https://ganu-be.vercel.app/api", 
-  //baseURL: "http://localhost:8080/api",
-  headers: { 
-    "Content-Type": "application/json"
-  },
-  timeout: 30000, // 30 second timeout
+  headers: { "Content-Type": "application/json" },
 });
 
 // Client-side API with interceptors (for client components)
 const createClientAPI = () => {
   const clientAPI = axios.create({
     baseURL: "https://ganu-be.vercel.app/api", 
-    //baseURL: "http://localhost:8080/api",
-    headers: { 
-      "Content-Type": "application/json"
-    },
-    timeout: 30000,
+    headers: { "Content-Type": "application/json" },
   });
 
   // Only add interceptors on client side
@@ -28,40 +20,19 @@ const createClientAPI = () => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-      
-      // Add cache busting parameter for GET requests
-      if (config.method === 'get') {
-        config.params = {
-          ...config.params,
-          _t: Date.now(), // Cache buster
-          _cache: 'no-store' // Additional cache control
-        };
-      }
-      
-      console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, config.params);
       return config;
     });
 
     // Add response interceptor to handle errors
     clientAPI.interceptors.response.use(
-      (response) => {
-        console.log(`API Response: ${response.status} ${response.config.url}`);
-        return response;
-      },
+      (response) => response,
       (error) => {
         console.error('API Error:', {
           status: error.response?.status,
           data: error.response?.data,
           message: error.message,
-          url: error.config?.url,
-          method: error.config?.method
+          url: error.config?.url
         });
-        
-        // Handle CORS errors specifically
-        if (error.message && error.message.includes('CORS')) {
-          console.error('CORS Error Detected - Check backend CORS configuration');
-        }
-        
         return Promise.reject(error);
       }
     );
@@ -186,113 +157,49 @@ const getBlogId = (blog: Blog): string => {
 
 // Public API calls (for server components)
 export const getCompanyInfo = async (): Promise<CompanyInfo> => {
-  const response = await API.get("/company", {
-    params: { _t: Date.now(), _cache: 'no-store' }
-  });
+  const response = await API.get("/company");
   return response.data;
 };
 
 export const getServices = async (): Promise<Service[]> => {
-  const response = await API.get("/services", {
-    params: { _t: Date.now(), _cache: 'no-store' }
-  });
+  const response = await API.get("/services");
   return response.data;
 };
 
 export const getEvents = async (): Promise<Event[]> => {
-  try {
-    console.log('Fetching events from API...');
-    const response = await API.get("/events", {
-      params: { _t: Date.now(), _cache: 'no-store' }
-    });
-    console.log(`Events API response: ${response.data.length} events`);
-    return response.data;
-  } catch (error) {
-    console.error('Error in getEvents:', error);
-    throw error;
-  }
+  const response = await API.get("/events");
+  return response.data;
 };
 
 // Public blogs (only published)
 export const getBlogs = async (): Promise<Blog[]> => {
-  const response = await API.get("/blogs", {
-    params: { _t: Date.now(), _cache: 'no-store' }
-  });
+  const response = await API.get("/blogs");
   return response.data;
 };
 
 // Admin blogs (all blogs including drafts)
 export const getAdminBlogs = async (): Promise<Blog[]> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.get("/blogs/admin/all", {
-    params: { _t: Date.now(), _cache: 'no-store' }
-  });
+  const response = await clientAPI.get("/blogs/admin/all");
   return response.data;
 };
 
 export const getCareers = async (): Promise<Career[]> => {
-  const response = await API.get("/careers", {
-    params: { _t: Date.now(), _cache: 'no-store' }
-  });
+  const response = await API.get("/careers");
   return response.data;
 };
 
 export const getAdminCareers = async (): Promise<Career[]> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.get("/careers/admin/all", {
-    params: { _t: Date.now(), _cache: 'no-store' }
-  });
+  const response = await clientAPI.get("/careers/admin/all");
   return response.data;
 };
 
 // Protected API calls (for client components - admin only)
 export const adminLogin = async (loginData: LoginData): Promise<AuthResponse> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.post("/auth/login", loginData, {
-    params: { _t: Date.now() } // Add cache buster for POST too
-  });
+  const response = await clientAPI.post("/auth/login", loginData);
   return response.data;
-};
-
-// Add health check function
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const checkAPIHealth = async (): Promise<any> => {
-  try {
-    const response = await API.get("/health", {
-      params: { _t: Date.now() }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Health check failed:', error);
-    throw error;
-  }
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const testCORS = async (): Promise<any> => {
-  try {
-    const response = await API.get("/cors-test", {
-      params: { _t: Date.now() }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('CORS test failed:', error);
-    throw error;
-  }
-};
-
-// Add debug function to test events endpoint
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const debugEvents = async (): Promise<any> => {
-  try {
-    const response = await API.get("/debug/events", {
-      params: { _t: Date.now() }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Debug endpoint failed:', error);
-    throw error;
-  }
 };
 
 export const createEvent = async (eventData: Partial<Event>): Promise<Event> => {
