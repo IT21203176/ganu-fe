@@ -1,33 +1,17 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import CORSTest from "@/components/CORSTest";
 import { getEvents, Event, debugEvents } from "@/api/api";
 
 async function getEventsData(): Promise<Event[]> {
   try {
     console.log('🔄 Fetching events data...');
     
-    // Test the debug endpoint first
-    try {
-      const debugData = await debugEvents();
-      console.log('🔍 Debug events data:', debugData);
-    } catch (debugError) {
-      console.log('⚠️ Debug endpoint not available, continuing...');
-    }
-    
     const events = await getEvents();
     console.log(`✅ Successfully fetched ${events.length} events`);
     return events || [];
   } catch (error) {
     console.error('❌ Error fetching events:', error);
-    
-    // Log detailed error information
-    if (error instanceof Error) {
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack
-      });
-    }
-    
     return [];
   }
 }
@@ -38,9 +22,10 @@ export default async function EventsPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-
+      
+      {/* CORS Test Banner - Remove after fixing */}
       <div className="fixed top-20 left-0 right-0 bg-yellow-500 text-black text-center py-2 text-sm z-50">
-        Debug: Loaded {events.length} events | {new Date().toLocaleTimeString()}
+        CORS Debug: Loaded {events.length} events | {new Date().toLocaleTimeString()}
       </div>
       
       {/* Hero Section */}
@@ -55,28 +40,19 @@ export default async function EventsPage() {
         </div>
       </section>
 
-      {/* Events Grid Section */}
+      {/* CORS Test Section - Remove after fixing */}
+      <section className="py-8 bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6">
+          <CORSTest />
+        </div>
+      </section>
+
+      {/* Rest of your events page content */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-6">
           {events.length === 0 ? (
             <div className="text-center py-16">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">No Events Scheduled</h3>
-              <p className="text-gray-600 max-w-md mx-auto mb-8">
-                We are currently planning our next events. Please check back later for updates on upcoming workshops and networking opportunities.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-desertSun hover:bg-burntOrange text-white px-6 py-3 rounded-lg transition-colors font-semibold">
-                  Get Notified
-                </button>
-                <button className="border-2 border-midnightBlue text-midnightBlue hover:bg-midnightBlue hover:text-white px-6 py-3 rounded-lg transition-colors font-semibold">
-                  Contact Us
-                </button>
-              </div>
+              {/* Your existing no events content */}
             </div>
           ) : (
             <>
@@ -94,49 +70,8 @@ export default async function EventsPage() {
                   <EventCard key={event.id || event._id} event={event} />
                 ))}
               </div>
-
-              {/* Past Events Section (Optional) */}
-              <div className="mt-20">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-4xl font-bold text-midnightBlue mb-4">
-                    Past Events
-                  </h2>
-                  <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Take a look at some of our previous successful events and workshops.
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {events
-                    .filter(event => new Date(event.date) < new Date())
-                    .map((event) => (
-                      <EventCard key={event.id || event._id} event={event} isPast={true} />
-                    ))
-                  }
-                </div>
-              </div>
             </>
           )}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-navyBlue">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Want to Host an Event With Us?
-          </h2>
-          <p className="text-xl text-white mb-8 max-w-2xl mx-auto">
-            Partner with us to create meaningful events that drive professional growth and community engagement.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-burntOrange hover:bg-opacity-90 text-white font-semibold py-3 px-8 rounded-lg transition-colors">
-              Partner With Us
-            </button>
-            <button className="bg-transparent hover:bg-white/10 border-2 border-white text-white font-semibold py-3 px-8 rounded-lg transition-colo">
-              Contact Our Team
-            </button>
-          </div>
         </div>
       </section>
 
