@@ -2,8 +2,8 @@ import axios from "axios";
 
 // Base API configuration without interceptors (for server components)
 const API = axios.create({
-  baseURL: "https://ganu-be.vercel.app/api", 
-  //baseURL: "http://localhost:8080/api",
+  //baseURL: "https://ganu-be.vercel.app/api", 
+  baseURL: "http://localhost:8080/api",
   headers: { 
     "Content-Type": "application/json"
   },
@@ -13,8 +13,8 @@ const API = axios.create({
 // Client-side API with interceptors (for client components)
 const createClientAPI = () => {
   const clientAPI = axios.create({
-    baseURL: "https://ganu-be.vercel.app/api", 
-    //baseURL: "http://localhost:8080/api",
+    //baseURL: "https://ganu-be.vercel.app/api", 
+    baseURL: "http://localhost:8080/api",
     headers: { 
       "Content-Type": "application/json"
     },
