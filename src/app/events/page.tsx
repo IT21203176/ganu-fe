@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { getEvents, Event, getEventId } from "@/api/api";
 
 export default function PublicEvents() {
@@ -70,7 +72,21 @@ export default function PublicEvents() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        <Header />
+
+        {/* Hero Section */}
+        <section className="pt-32 pb-20 bg-gradient-to-br from-midnightBlue via-navyBlue to-black">
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+              Join Our Team
+            </h1>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Build your career with GANU Professional Services and be part of a
+              team that values excellence and innovation.
+            </p>
+          </div>
+        </section>
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-midnightBlue mb-4">Upcoming Events</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -167,18 +183,7 @@ export default function PublicEvents() {
           </div>
         )}
 
-        {/* Back to Home Link */}
-        <div className="text-center mt-12">
-          <Link
-            href="/"
-            className="inline-flex items-center text-desertSun hover:text-burntOrange font-semibold transition-colors"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Home
-          </Link>
-        </div>
+        <Footer />
       </div>
     </div>
   );
