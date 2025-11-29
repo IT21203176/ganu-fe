@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // API base URL - can be configured via environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://ganu-be.vercel.app/";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://ganu-be.vercel.app";
 
 // Base API configuration without interceptors (for server components)
 const API = axios.create({
