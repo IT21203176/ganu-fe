@@ -27,6 +27,7 @@ export default function CareerCard({ career }: { career: Career }) {
       {/* Display Image or PDF */}
       {career.fileType === 'image' && career.imageUrl && (
         <div className="h-48 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={getFileUrl(career.imageUrl)}
             alt={career.title}

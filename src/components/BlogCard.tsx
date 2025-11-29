@@ -21,6 +21,7 @@ export default function BlogCard({ blog }: BlogCardProps) {
     <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
       {blog.imageUrl && !blog.isPdfPost && (
         <div className="h-48 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={blog.imageUrl}
             alt={blog.title}

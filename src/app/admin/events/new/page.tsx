@@ -235,6 +235,7 @@ export default function CreateEvent() {
                       {filePreview !== 'pdf' ? (
                         <div>
                           <p className="text-sm font-medium text-gray-700 mb-2">Image Preview:</p>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={filePreview}
                             alt="Preview"

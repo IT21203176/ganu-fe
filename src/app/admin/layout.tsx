@@ -19,6 +19,7 @@ export default function AdminLayout({
 
   useEffect(() => {
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const checkAuth = async () => {
@@ -49,7 +50,7 @@ export default function AdminLayout({
       if (pathname !== '/admin/login') {
         await fetchUnreadContacts();
       }
-    } catch (error) {
+    } catch {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
       router.push('/admin/login');

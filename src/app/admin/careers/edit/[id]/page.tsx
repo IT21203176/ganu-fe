@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getAdminCareerById, updateCareer, Career, getCareerId, getFileUrl } from "@/api/api";
+import { getAdminCareerById, updateCareer, Career, getFileUrl } from "@/api/api";
 
 export default function EditCareer() {
   const [loading, setLoading] = useState(false);
@@ -27,6 +27,7 @@ export default function EditCareer() {
     if (careerId) {
       fetchCareer(careerId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.id]);
 
   const fetchCareer = async (careerId: string) => {
@@ -415,6 +416,7 @@ export default function EditCareer() {
                       <p className="text-sm font-medium text-gray-700 mb-2">New File Preview:</p>
                       {filePreview !== 'pdf' ? (
                         <div>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={filePreview}
                             alt="Preview"

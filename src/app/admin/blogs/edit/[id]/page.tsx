@@ -24,6 +24,7 @@ export default function EditBlog() {
     if (blogId) {
       fetchBlog(blogId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.id]);
 
   const fetchBlog = async (blogId: string) => {

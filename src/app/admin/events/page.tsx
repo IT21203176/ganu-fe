@@ -143,6 +143,7 @@ export default function EventsManagement() {
                         <div className="flex items-start">
                           {event.fileType === 'image' && event.imageUrl && (
                             <div className="flex-shrink-0 h-10 w-10">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 className="h-10 w-10 rounded-lg object-cover"
                                 src={getFileUrl(event.imageUrl)}

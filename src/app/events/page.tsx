@@ -244,6 +244,7 @@ export default function PublicEvents() {
                       {/* Event Image or PDF */}
                       {event.fileType === 'image' && event.imageUrl && (
                         <div className="h-48 overflow-hidden relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={getFileUrl(event.imageUrl)}
                             alt={event.title}
@@ -477,6 +478,7 @@ export default function PublicEvents() {
               {/* Event Image or PDF */}
               {selectedEvent.fileType === 'image' && selectedEvent.imageUrl && (
                 <div className="mb-6 rounded-lg overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={getFileUrl(selectedEvent.imageUrl)}
                     alt={selectedEvent.title}

@@ -60,16 +60,6 @@ export default function Home() {
     updateDots(newSlide);
   };
 
-  const goToSlide = (slideIndex: number) => {
-    const carousel = document.getElementById('testimonial-carousel');
-    setCurrentSlide(slideIndex);
-    
-    if (carousel) {
-      carousel.style.transform = `translateX(-${slideIndex * 100}%)`;
-    }
-    
-    updateDots(slideIndex);
-  };
 
   const updateDots = (activeIndex: number) => {
     const dots = document.querySelectorAll('.carousel-dot');
@@ -91,6 +81,7 @@ export default function Home() {
     }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSlide]);
 
   // Initialize dots on first render

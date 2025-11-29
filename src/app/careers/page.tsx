@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getCareers, Career, getCareerId, getFileUrl } from "@/api/api";
@@ -43,7 +42,6 @@ export default function CareersPage() {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isModalOpen, isDetailsModalOpen]);
 
   const openModal = (imageUrl: string, alt: string) => {
@@ -277,6 +275,7 @@ export default function CareersPage() {
                       {/* Display Image or PDF */}
                       {career.fileType === 'image' && career.imageUrl && (
                         <div className="h-48 overflow-hidden bg-gray-100">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={getFileUrl(career.imageUrl)}
                             alt={career.title}
@@ -550,6 +549,7 @@ export default function CareersPage() {
               {/* Image or PDF Display */}
               {selectedCareer.fileType === 'image' && selectedCareer.imageUrl && (
                 <div className="rounded-lg overflow-hidden bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={getFileUrl(selectedCareer.imageUrl)}
                     alt={selectedCareer.title}
@@ -720,6 +720,7 @@ export default function CareersPage() {
 
           {/* Image Container */}
           <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={selectedImage.url}
               alt={selectedImage.alt}

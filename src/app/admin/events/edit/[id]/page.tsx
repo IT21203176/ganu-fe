@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getEventById, updateEvent, Event, getEventId, getFileUrl } from "@/api/api";
+import { getEventById, updateEvent, Event, getFileUrl } from "@/api/api";
 
 export default function EditEvent() {
   const [loading, setLoading] = useState(false);
@@ -26,6 +26,7 @@ export default function EditEvent() {
     if (eventId) {
       fetchEvent(eventId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.id]);
 
   const fetchEvent = async (eventId: string) => {
@@ -336,6 +337,7 @@ export default function EditEvent() {
                   <p className="text-sm font-medium text-gray-700 mb-2">Current File:</p>
                   {event.fileType === 'image' && event.imageUrl ? (
                     <div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getFileUrl(event.imageUrl)}
                         alt="Current event image"
@@ -377,6 +379,7 @@ export default function EditEvent() {
                       <p className="text-sm font-medium text-gray-700 mb-2">New File Preview:</p>
                       {filePreview !== 'pdf' ? (
                         <div>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={filePreview}
                             alt="Preview"

@@ -49,10 +49,10 @@ export default function AdminDashboard() {
       try {
         contacts = await getAdminContacts();
         unreadContacts = contacts.filter(contact => !contact.read).length;
-      } catch (error: any) {
+      } catch (error) {
         // If contacts fail due to auth, the interceptor will handle redirect
         // Otherwise, just log and continue with other data
-        if (error.message?.includes('Authentication')) {
+        if (error instanceof Error && error.message?.includes('Authentication')) {
           // Auth error - let the interceptor handle redirect
           throw error;
         }

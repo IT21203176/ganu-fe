@@ -147,6 +147,7 @@ export default function BlogsManagement() {
                         <div className="flex items-center">
                           {blog.imageUrl && (
                             <div className="flex-shrink-0 h-10 w-10">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 className="h-10 w-10 rounded-lg object-cover"
                                 src={blog.imageUrl}

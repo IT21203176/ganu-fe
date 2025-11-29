@@ -203,6 +203,7 @@ export default function BlogsPage() {
                       {/* Blog Image or PDF Icon */}
                       {blog.imageUrl && !isPdf ? (
                         <div className="h-48 overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={blog.imageUrl}
                             alt={blog.title}
