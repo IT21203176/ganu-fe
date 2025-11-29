@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = defaultMetadata;
+export const metadata: Metadata = defaultMetadata as Metadata;
 
 export default function RootLayout({
   children,

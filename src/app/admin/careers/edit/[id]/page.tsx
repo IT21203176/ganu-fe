@@ -373,6 +373,7 @@ export default function EditCareer() {
                   <p className="text-sm font-medium text-gray-700 mb-2">Current File:</p>
                   {career.fileType === 'image' && career.imageUrl ? (
                     <div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getFileUrl(career.imageUrl)}
                         alt="Current career image"

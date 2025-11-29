@@ -1,4 +1,6 @@
 // SEO Configuration and Constants
+import type { Metadata } from "next";
+
 export const siteConfig = {
   name: "GANU Professional Services",
   description: "GANU Professional Services - Your partner in HR excellence. Leading provider of comprehensive HR, Finance, Secretariat, and General Administration solutions in Sri Lanka. Trusted by industry leaders for payroll management, EPF/ETF services, compliance, and business growth.",
@@ -72,15 +74,15 @@ export const defaultMetadata = {
       "max-video-preview": -1,
       "max-image-preview": "large",
       "max-snippet": -1,
-    },
-  },
+    } as const,
+  } as Metadata["robots"],
   verification: {
     // Add verification codes when available
     // google: "your-google-verification-code",
     // yandex: "your-yandex-verification-code",
     // bing: "your-bing-verification-code",
   },
-};
+} as Metadata;
 
 // Helper function to generate page metadata
 export function generatePageMetadata(
