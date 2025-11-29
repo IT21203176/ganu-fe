@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getAdminBlogs, deleteBlog, updateBlog, Blog, getBlogId } from "@/api/api";
+import { getAdminBlogs, deleteBlog, updateBlog, Blog, getBlogId, getFileUrl } from "@/api/api";
 
 export default function BlogsManagement() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -14,9 +14,30 @@ export default function BlogsManagement() {
     fetchBlogs();
   }, []);
 
+  // Refresh blogs when returning from create/edit pages
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchBlogs();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchBlogs();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   const fetchBlogs = async () => {
     try {
+      setLoading(true);
       const blogsData = await getAdminBlogs(); // Use admin endpoint to get all blogs including drafts
+      // Log for debugging
+      console.log('Admin fetched blogs:', blogsData);
       setBlogs(blogsData);
     } catch (error) {
       console.error('Error fetching blogs:', error);
@@ -144,27 +165,42 @@ export default function BlogsManagement() {
                   return (
                     <tr key={blogId || `blog-${index}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          {blog.imageUrl && (
+                        <div className="flex items-start">
+                          {blog.fileType === 'image' && blog.imageUrl && (
                             <div className="flex-shrink-0 h-10 w-10">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 className="h-10 w-10 rounded-lg object-cover"
-                                src={blog.imageUrl}
+                                src={getFileUrl(blog.imageUrl)}
                                 alt={blog.title}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
                               />
                             </div>
                           )}
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                          {(blog.fileType === 'pdf' || blog.isPdfPost) && blog.pdfUrl && (
+                            <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-red-100 rounded-lg">
+                              <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                          <div className={`${(blog.fileType === 'image' && blog.imageUrl) || ((blog.fileType === 'pdf' || blog.isPdfPost) && blog.pdfUrl) ? "ml-4" : ""} min-w-0 flex-1`}>
+                            <div className="text-sm font-medium text-gray-900 truncate">
                               {blog.title}
                               {!blog.published && (
                                 <span className="ml-2 text-xs text-gray-500">(Draft)</span>
                               )}
                             </div>
-                            <div className="text-sm text-gray-500 line-clamp-2">
+                            <div className="text-sm text-gray-500 line-clamp-2 break-words">
                               {blog.excerpt || (blog.content && blog.content.substring(0, 100)) || 'No content'}...
                             </div>
+                            {(blog.fileType === 'pdf' || blog.isPdfPost) && blog.pdfFileName && (
+                              <div className="text-xs text-gray-400 mt-1 truncate">
+                                📄 {blog.pdfFileName}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>

@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getAdminBlogs, updateBlog, Blog, getBlogId } from "@/api/api";
+import { getAdminBlogs, updateBlog, Blog, getBlogId, getFileUrl } from "@/api/api";
 
 export default function EditBlog() {
   const [loading, setLoading] = useState(false);
   const [blog, setBlog] = useState<Blog | null>(null);
   const [formData, setFormData] = useState<Partial<Blog>>({});
-  const [file, setFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const params = useParams();
@@ -39,6 +41,17 @@ export default function EditBlog() {
       });
 
       if (blogData) {
+        // Log for debugging
+        console.log('Fetched blog data:', blogData);
+        console.log('Blog file fields:', {
+          imageUrl: blogData.imageUrl,
+          pdfUrl: blogData.pdfUrl,
+          fileType: blogData.fileType,
+          pdfFileName: blogData.pdfFileName,
+          fileSize: blogData.fileSize,
+          isPdfPost: blogData.isPdfPost
+        });
+        
         setBlog(blogData);
         setFormData({
           title: blogData.title,
@@ -46,7 +59,12 @@ export default function EditBlog() {
           content: blogData.content || '',
           author: blogData.author,
           published: blogData.published,
-          imageUrl: blogData.imageUrl || '',
+          // Preserve all file-related fields
+          imageUrl: blogData.imageUrl,
+          pdfUrl: blogData.pdfUrl,
+          pdfFileName: blogData.pdfFileName,
+          fileSize: blogData.fileSize,
+          fileType: blogData.fileType,
           isPdfPost: blogData.isPdfPost || false
         });
       } else {
@@ -62,6 +80,7 @@ export default function EditBlog() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setFileError(null);
 
     try {
       const blogId = getBlogIdFromParams();
@@ -69,28 +88,58 @@ export default function EditBlog() {
         throw new Error('No blog ID provided');
       }
 
-      // Create FormData to handle file upload
-      const submitData = new FormData();
-      
-      // Append all form fields
-      Object.keys(formData).forEach(key => {
-        const value = formData[key as keyof Blog];
-        if (value !== undefined && value !== null) {
-          submitData.append(key, value.toString());
-        }
-      });
-
-      // Append file if selected
-      if (file) {
-        submitData.append('file', file);
+      // Validate required fields
+      if (!formData.title || !formData.author) {
+        setError('Please fill in all required fields.');
+        setLoading(false);
+        return;
       }
 
-      await updateBlog(blogId, submitData);
+      // Create FormData if file is selected, otherwise use JSON
+      if (selectedFile) {
+        const formDataToSend = new FormData();
+        formDataToSend.append('file', selectedFile);
+        formDataToSend.append('title', formData.title || '');
+        formDataToSend.append('author', formData.author || '');
+        if (formData.excerpt) formDataToSend.append('excerpt', formData.excerpt);
+        if (formData.content) formDataToSend.append('content', formData.content);
+        formDataToSend.append('published', formData.published ? 'true' : 'false');
+        formDataToSend.append('isPdfPost', formData.isPdfPost ? 'true' : 'false');
+
+        await updateBlog(blogId, formDataToSend);
+      } else {
+        // When updating without a new file, preserve existing file fields
+        const blogData: Partial<Blog> = {
+          title: formData.title,
+          author: formData.author,
+          excerpt: formData.excerpt,
+          content: formData.content,
+          published: formData.published,
+          isPdfPost: formData.isPdfPost,
+          // Preserve file fields from blog state (source of truth)
+          imageUrl: blog?.imageUrl,
+          pdfUrl: blog?.pdfUrl,
+          pdfFileName: blog?.pdfFileName,
+          fileSize: blog?.fileSize,
+          fileType: blog?.fileType,
+        };
+        
+        console.log('Updating blog without new file, preserving:', {
+          imageUrl: blog?.imageUrl,
+          pdfUrl: blog?.pdfUrl,
+          fileType: blog?.fileType
+        });
+        
+        await updateBlog(blogId, blogData);
+      }
+      
       router.push('/admin/blogs');
       router.refresh();
     } catch (error) {
       console.error('Error updating blog:', error);
-      setError(error instanceof Error ? error.message : 'Error updating blog');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update blog. Please try again.';
+      setError(errorMessage);
+      setFileError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -105,16 +154,57 @@ export default function EditBlog() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    const file = e.target.files?.[0];
+    setFileError(null);
+    
+    if (!file) {
+      setSelectedFile(null);
+      setFilePreview(null);
+      return;
+    }
+
+    // Validate file type
+    const isValidImage = file.type.startsWith('image/');
+    const isValidPdf = file.type === 'application/pdf';
+    
+    if (!isValidImage && !isValidPdf) {
+      setFileError('Only image and PDF files are allowed!');
+      setSelectedFile(null);
+      setFilePreview(null);
+      return;
+    }
+
+    // Validate file size (20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      setFileError('File too large. Maximum size is 20MB.');
+      setSelectedFile(null);
+      setFilePreview(null);
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Create preview
+    if (isValidImage) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (isValidPdf) {
+      setFilePreview('pdf');
     }
   };
 
   const removeFile = () => {
-    setFile(null);
-    // Clear file input
+    setSelectedFile(null);
+    setFilePreview(null);
+    setFileError(null);
+    // Reset file input
     const fileInput = document.getElementById('file') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   if (error) {
@@ -149,38 +239,13 @@ export default function EditBlog() {
         <p className="text-gray-600 mt-2">Update blog article details</p>
       </div>
 
-      {/* Current PDF Info */}
-      {blog.isPdfPost && blog.pdfUrl && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-blue-800 mb-2">Current PDF Document</h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-700">
-                <strong>File:</strong> {blog.pdfFileName || 'PDF Document'}
-              </p>
-              {blog.fileSize && (
-                <p className="text-blue-600 text-sm">
-                  <strong>Size:</strong> {blog.fileSize}
-                </p>
-              )}
-            </div>
-            <div className="flex space-x-2">
-              <a
-                href={`http://localhost:8080${blog.pdfUrl}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
-              >
-                View PDF
-              </a>
-              <a
-                href={`http://localhost:8080${blog.pdfUrl}`}
-                download={blog.pdfFileName || 'document.pdf'}
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors"
-              >
-                Download
-              </a>
-            </div>
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-red-800 font-medium">{error}</p>
           </div>
         </div>
       )}
@@ -289,55 +354,127 @@ export default function EditBlog() {
               </p>
             </div>
 
-            {formData.isPdfPost && (
-              <div>
-                <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
-                  PDF File {blog.isPdfPost ? '(Replace current file)' : ''}
-                </label>
-                <div className="flex items-center space-x-4">
-                  <input
-                    type="file"
-                    id="file"
-                    name="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-desertSun file:text-white hover:file:bg-burntOrange"
-                  />
-                  {file && (
+            {/* File Upload - Image or PDF */}
+            <div>
+              <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
+                {formData.isPdfPost ? 'PDF File' : 'Upload File (Image or PDF)'}
+              </label>
+              <input
+                type="file"
+                id="file"
+                name="file"
+                accept={formData.isPdfPost ? ".pdf" : "image/*,.pdf"}
+                onChange={handleFileChange}
+                className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Supported formats: {formData.isPdfPost ? 'PDF only' : 'Images (JPG, PNG, etc.) and PDF'}. Maximum file size: 20MB. Leave empty to keep existing file.
+              </p>
+              
+              {fileError && (
+                <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-sm">
+                  {fileError}
+                </div>
+              )}
+
+              {/* Existing File Display */}
+              {!selectedFile && blog && (blog.imageUrl || blog.pdfUrl) && (
+                <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Current File:</p>
+                  {/* Display Image - check blog state with fallbacks */}
+                  {((blog.fileType === 'image' && blog.imageUrl) || (!blog.fileType && blog.imageUrl && !blog.pdfUrl)) && (
+                    <div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getFileUrl(blog.imageUrl)}
+                        alt="Current blog image"
+                        className="max-w-full h-auto max-h-64 rounded-lg border border-gray-300"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<p class="text-sm text-red-600">Image failed to load</p>';
+                          }
+                        }}
+                      />
+                      <p className="text-sm text-gray-600 mt-2">Current Image</p>
+                      {blog.fileType && (
+                        <p className="text-xs text-gray-500 mt-1">File Type: {blog.fileType}</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Display PDF - check blog state with fallbacks */}
+                  {((blog.fileType === 'pdf' || blog.isPdfPost) && blog.pdfUrl) || (!blog.fileType && blog.pdfUrl && !blog.imageUrl) ? (
+                    <div className="flex items-center space-x-2 p-3 bg-white rounded border border-gray-300">
+                      <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{blog.pdfFileName || 'PDF Document'}</p>
+                        {blog.fileSize && (
+                          <p className="text-xs text-gray-500">{blog.fileSize}</p>
+                        )}
+                        {blog.fileType && (
+                          <p className="text-xs text-gray-500">File Type: {blog.fileType}</p>
+                        )}
+                      </div>
+                      <a
+                        href={getFileUrl(blog.pdfUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-desertSun hover:text-burntOrange text-sm font-medium"
+                      >
+                        View
+                      </a>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {/* New File Preview */}
+              {filePreview && selectedFile && (
+                <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-700 mb-2">New File Preview:</p>
+                      {filePreview !== 'pdf' ? (
+                        <div>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={filePreview}
+                            alt="Preview"
+                            className="max-w-full h-auto max-h-64 rounded-lg border border-gray-300"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center p-3 bg-white rounded-lg border border-gray-300">
+                            <svg className="w-10 h-10 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
+                              <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="button"
                       onClick={removeFile}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      className="ml-4 text-red-600 hover:text-red-800"
                     >
-                      Remove
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
-                  )}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {file 
-                    ? `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
-                    : 'Choose a PDF file to upload (max 20MB)'
-                  }
-                </p>
-              </div>
-            )}
-
-            {!formData.isPdfPost && (
-              <div>
-                <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL
-                </label>
-                <input
-                  type="url"
-                  id="imageUrl"
-                  name="imageUrl"
-                  value={formData.imageUrl || ''}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-desertSun focus:border-transparent text-gray-900 placeholder-gray-500"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Blog } from "@/api/api";
+import { Blog, getFileUrl } from "@/api/api";
 
 interface BlogCardProps {
   blog: Blog;
@@ -7,30 +7,26 @@ interface BlogCardProps {
 
 export default function BlogCard({ blog }: BlogCardProps) {
   const blogId = blog.id || blog._id;
-  
-  // Construct full URL for PDF files
-  const getPdfUrl = (pdfUrl: string | undefined) => {
-    if (!pdfUrl) return '';
-    // If it's already a full URL, return as is
-    if (pdfUrl.startsWith('http')) return pdfUrl;
-    // Otherwise, prepend the backend URL
-    return `http://localhost:8080${pdfUrl}`;
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
-      {blog.imageUrl && !blog.isPdfPost && (
+      {/* Display Image */}
+      {blog.imageUrl && (blog.fileType === 'image' || (!blog.fileType && !blog.pdfUrl)) && (
         <div className="h-48 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={blog.imageUrl}
+            src={getFileUrl(blog.imageUrl)}
             alt={blog.title}
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
           />
         </div>
       )}
       
-      {blog.isPdfPost && (
+      {/* Display PDF */}
+      {blog.pdfUrl && ((blog.fileType === 'pdf' || blog.isPdfPost) || (!blog.fileType && !blog.imageUrl)) && (
         <div className="h-48 bg-gradient-to-br from-red-50 to-red-100 flex flex-col items-center justify-center p-4 border-b border-red-200">
           <svg className="w-16 h-16 text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -71,10 +67,10 @@ export default function BlogCard({ blog }: BlogCardProps) {
           </p>
         )}
         
-        {blog.isPdfPost ? (
+        {(blog.fileType === 'pdf' || blog.isPdfPost) && blog.pdfUrl ? (
           <div className="flex flex-col sm:flex-row gap-2">
             <a
-              href={getPdfUrl(blog.pdfUrl)}
+              href={getFileUrl(blog.pdfUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 px-4 py-3 rounded-lg text-center font-semibold transition-colors flex items-center justify-center"
@@ -86,7 +82,7 @@ export default function BlogCard({ blog }: BlogCardProps) {
               View PDF
             </a>
             <a
-              href={getPdfUrl(blog.pdfUrl)}
+              href={getFileUrl(blog.pdfUrl)}
               download={blog.pdfFileName || 'document.pdf'}
               className="flex-1 bg-desertSun text-white hover:bg-burntOrange px-4 py-3 rounded-lg text-center font-semibold transition-colors flex items-center justify-center"
             >

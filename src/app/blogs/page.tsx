@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getBlogs, Blog, getBlogId } from "@/api/api";
+import { getBlogs, Blog, getBlogId, getFileUrl } from "@/api/api";
 
 export default function BlogsPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -16,10 +16,24 @@ export default function BlogsPage() {
     fetchBlogs();
   }, []);
 
+  // Refresh blogs when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchBlogs();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   const fetchBlogs = async () => {
     try {
       setError(null);
+      setLoading(true);
       const blogsData = await getBlogs(); // Use public endpoint to get only published blogs
+      // Log for debugging
+      console.log('Fetched blogs:', blogsData);
       setBlogs(blogsData);
     } catch (error) {
       console.error('Error fetching blogs:', error);
@@ -200,36 +214,53 @@ export default function BlogsPage() {
                       key={blogId || `blog-${index}`}
                       className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100"
                     >
-                      {/* Blog Image or PDF Icon */}
-                      {blog.imageUrl && !isPdf ? (
+                      {/* Blog Image or PDF */}
+                      {/* Display Image if fileType is 'image' OR if imageUrl exists and no pdfUrl */}
+                      {blog.imageUrl && (blog.fileType === 'image' || (!blog.fileType && !blog.pdfUrl)) && (
                         <div className="h-48 overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={blog.imageUrl}
+                            src={getFileUrl(blog.imageUrl)}
                             alt={blog.title}
                             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-gray-200"><p class="text-xs text-gray-500">Image not available</p></div>';
+                              }
+                            }}
                           />
                         </div>
-                      ) : (
-                        <div className="h-48 bg-gradient-to-br from-midnightBlue to-navyBlue flex items-center justify-center">
-                          {isPdf ? (
-                            <div className="text-center text-white">
-                              <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <span className="font-semibold">PDF Document</span>
-                              {blog.fileSize && (
-                                <p className="text-sm opacity-80 mt-1">{blog.fileSize}</p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-center text-white">
-                              <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              <span className="font-semibold">Blog Article</span>
-                            </div>
+                      )}
+                      
+                      {/* Display PDF if fileType is 'pdf' OR if pdfUrl exists and no imageUrl */}
+                      {blog.pdfUrl && ((blog.fileType === 'pdf' || isPdf) || (!blog.fileType && !blog.imageUrl)) && (
+                        <div className="h-48 bg-gradient-to-br from-red-50 to-red-100 flex flex-col items-center justify-center p-4 border-b border-red-200">
+                          <svg className="w-16 h-16 text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="text-red-700 font-semibold text-center mb-1">PDF Document</span>
+                          {blog.fileSize && (
+                            <p className="text-red-600 text-sm mb-2">{blog.fileSize}</p>
                           )}
+                          {blog.pdfFileName && (
+                            <p className="text-red-500 text-xs mb-2 text-center truncate max-w-full px-2">
+                              {blog.pdfFileName}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {!blog.imageUrl && !blog.pdfUrl && (
+                        <div className="h-48 bg-gradient-to-br from-midnightBlue to-navyBlue flex items-center justify-center">
+                          <div className="text-center text-white">
+                            <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span className="font-semibold">Blog Article</span>
+                          </div>
                         </div>
                       )}
 
@@ -275,10 +306,10 @@ export default function BlogsPage() {
 
                         {/* Action Buttons */}
                         <div className="flex space-x-3">
-                          {isPdf ? (
+                          {(blog.fileType === 'pdf' || isPdf) && blog.pdfUrl ? (
                             <>
                               <a
-                                href={blog.pdfUrl}
+                                href={getFileUrl(blog.pdfUrl)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex-1 bg-desertSun hover:bg-burntOrange text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center"
@@ -286,7 +317,7 @@ export default function BlogsPage() {
                                 View PDF
                               </a>
                               <a
-                                href={blog.pdfUrl}
+                                href={getFileUrl(blog.pdfUrl)}
                                 download={blog.pdfFileName || 'document.pdf'}
                                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
                               >
@@ -294,9 +325,12 @@ export default function BlogsPage() {
                               </a>
                             </>
                           ) : (
-                            <button className="flex-1 bg-desertSun hover:bg-burntOrange text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                            <Link
+                              href={`/blogs/${blogId}`}
+                              className="flex-1 bg-desertSun hover:bg-burntOrange text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center"
+                            >
                               Read More
-                            </button>
+                            </Link>
                           )}
                         </div>
                       </div>

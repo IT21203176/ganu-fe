@@ -23,6 +23,10 @@ const createClientAPI = () => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      // If data is FormData, remove Content-Type header to let axios set it with boundary
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+      }
       return config;
     });
 
@@ -120,11 +124,12 @@ export interface Blog {
   content?: string; // Make optional for PDF posts
   excerpt?: string;
   author: string;
-  imageUrl?: string;
-  pdfUrl?: string; // New field
-  pdfFileName?: string; // New field
-  isPdfPost?: boolean; // New field
-  fileSize?: string; // New field
+  imageUrl?: string; // For image files
+  pdfUrl?: string; // For PDF files
+  pdfFileName?: string; // Original PDF file name
+  fileSize?: string; // File size for display
+  fileType?: 'image' | 'pdf'; // Track file type
+  isPdfPost?: boolean; // Flag to identify PDF posts
   published: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -330,10 +335,18 @@ export const createBlog = async (blogData: FormData | Partial<Blog>): Promise<Bl
   const clientAPI = createClientAPI();
   
   try {
-    const response = await clientAPI.post("/blogs", blogData);
+    // For FormData, let axios set Content-Type automatically (with boundary)
+    // For JSON, explicitly set Content-Type
+    const config = blogData instanceof FormData 
+      ? { headers: {} } // Let axios set multipart/form-data with boundary
+      : { headers: { 'Content-Type': 'application/json' } };
+    
+    const response = await clientAPI.post("/blogs", blogData, config);
+    console.log('Blog created successfully:', response.data);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.error('Error creating blog:', error);
     if (error.response?.status === 400 && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === 413) {
@@ -348,10 +361,18 @@ export const updateBlog = async (id: string, blogData: FormData | Partial<Blog>)
   const clientAPI = createClientAPI();
   
   try {
-    const response = await clientAPI.put(`/blogs/${id}`, blogData);
+    // For FormData, let axios set Content-Type automatically (with boundary)
+    // For JSON, explicitly set Content-Type
+    const config = blogData instanceof FormData 
+      ? { headers: {} } // Let axios set multipart/form-data with boundary
+      : { headers: { 'Content-Type': 'application/json' } };
+    
+    const response = await clientAPI.put(`/blogs/${id}`, blogData, config);
+    console.log('Blog updated successfully:', response.data);
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.error('Error updating blog:', error);
     if (error.response?.status === 400 && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === 413) {
