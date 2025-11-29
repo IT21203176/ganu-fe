@@ -36,15 +36,28 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch counts from your backend API
-      const [events, blogs, careers, contacts] = await Promise.all([
+      // Fetch public data first
+      const [events, blogs, careers] = await Promise.all([
         getEvents(),
         getBlogs(),
-        getCareers(),
-        getAdminContacts()
+        getCareers()
       ]);
 
-      const unreadContacts = contacts.filter(contact => !contact.read).length;
+      // Fetch contacts separately to handle auth errors gracefully
+      let contacts: Awaited<ReturnType<typeof getAdminContacts>> = [];
+      let unreadContacts = 0;
+      try {
+        contacts = await getAdminContacts();
+        unreadContacts = contacts.filter(contact => !contact.read).length;
+      } catch (error: any) {
+        // If contacts fail due to auth, the interceptor will handle redirect
+        // Otherwise, just log and continue with other data
+        if (error.message?.includes('Authentication')) {
+          // Auth error - let the interceptor handle redirect
+          throw error;
+        }
+        console.warn('Failed to fetch contacts, continuing with other data:', error);
+      }
 
       setStats({
         events: events.length,
@@ -78,6 +91,10 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // If it's an auth error, don't set loading to false - let redirect happen
+      if (error instanceof Error && error.message?.includes('Authentication')) {
+        return;
+      }
     } finally {
       setLoading(false);
     }

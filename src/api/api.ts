@@ -1,15 +1,18 @@
 import axios from "axios";
 
+// API base URL - can be configured via environment variable
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://ganu-be.vercel.app/";
+
 // Base API configuration without interceptors (for server components)
 const API = axios.create({
-  baseURL: "https://ganu-be.vercel.app/api", 
+  baseURL: `${API_BASE_URL}/api`, 
   headers: { "Content-Type": "application/json" },
 });
 
 // Client-side API with interceptors (for client components)
 const createClientAPI = () => {
   const clientAPI = axios.create({
-    baseURL: "https://ganu-be.vercel.app/api", 
+    baseURL: `${API_BASE_URL}/api`, 
     headers: { "Content-Type": "application/json" },
   });
 
@@ -27,8 +30,20 @@ const createClientAPI = () => {
     clientAPI.interceptors.response.use(
       (response) => response,
       (error) => {
+        const status = error.response?.status;
+        
+        // Handle 401 Unauthorized - clear tokens and redirect to login
+        if (status === 401 && typeof window !== 'undefined') {
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+          // Only redirect if not already on login page
+          if (window.location.pathname !== '/admin/login') {
+            window.location.href = '/admin/login';
+          }
+        }
+        
         console.error('API Error:', {
-          status: error.response?.status,
+          status: status,
           data: error.response?.data,
           message: error.message,
           url: error.config?.url
@@ -66,7 +81,12 @@ export interface Event {
   description: string;
   date: string;
   location: string;
-  imageUrl?: string;
+  type: 'news' | 'event';
+  imageUrl?: string; // For image files
+  pdfUrl?: string; // For PDF files
+  pdfFileName?: string; // Original PDF file name
+  fileSize?: string; // File size for display
+  fileType?: 'image' | 'pdf'; // Track file type
   createdAt?: string;
   updatedAt?: string;
 }
@@ -120,6 +140,11 @@ export interface Career {
   type: 'full-time' | 'part-time' | 'contract';
   salary?: string;
   applicationDeadline: string;
+  imageUrl?: string; // For image files
+  pdfUrl?: string; // For PDF files
+  pdfFileName?: string; // Original PDF file name
+  fileSize?: string; // File size for display
+  fileType?: 'image' | 'pdf'; // Track file type
   published: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -166,8 +191,27 @@ export const getServices = async (): Promise<Service[]> => {
   return response.data;
 };
 
-export const getEvents = async (): Promise<Event[]> => {
-  const response = await API.get("/events");
+export const getEvents = async (type?: 'news' | 'event'): Promise<Event[]> => {
+  const url = type ? `/events?type=${type}` : '/events';
+  const response = await API.get(url);
+  return response.data;
+};
+
+// Get all news items
+export const getNews = async (): Promise<Event[]> => {
+  const response = await API.get("/events/news");
+  return response.data;
+};
+
+// Get all events (type: 'event')
+export const getEventsOnly = async (): Promise<Event[]> => {
+  const response = await API.get("/events/events");
+  return response.data;
+};
+
+// Get single event by ID (public)
+export const getEventById = async (id: string): Promise<Event> => {
+  const response = await API.get(`/events/${id}`);
   return response.data;
 };
 
@@ -195,6 +239,12 @@ export const getAdminCareers = async (): Promise<Career[]> => {
   return response.data;
 };
 
+export const getAdminCareerById = async (id: string): Promise<Career> => {
+  const clientAPI = createClientAPI();
+  const response = await clientAPI.get(`/careers/admin/${id}`);
+  return response.data;
+};
+
 // Protected API calls (for client components - admin only)
 export const adminLogin = async (loginData: LoginData): Promise<AuthResponse> => {
   const clientAPI = createClientAPI();
@@ -202,21 +252,77 @@ export const adminLogin = async (loginData: LoginData): Promise<AuthResponse> =>
   return response.data;
 };
 
-export const createEvent = async (eventData: Partial<Event>): Promise<Event> => {
+export const createEvent = async (eventData: FormData | Partial<Event>): Promise<Event> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.post("/events", eventData);
-  return response.data;
+  
+  try {
+    // Axios automatically handles FormData and sets Content-Type with boundary
+    // For JSON, the default Content-Type from createClientAPI is used
+    const config = eventData instanceof FormData 
+      ? { 
+          headers: { 
+            'Content-Type': 'multipart/form-data' // Axios will override this with boundary
+          } 
+        }
+      : {};
+    
+    const response = await clientAPI.post("/events", eventData, config);
+    return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 400 && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 413) {
+      throw new Error('File too large. Maximum size is 20MB.');
+    } else {
+      throw new Error('Failed to create event. Please try again.');
+    }
+  }
 };
 
-export const updateEvent = async (id: string, eventData: Partial<Event>): Promise<Event> => {
+export const updateEvent = async (id: string, eventData: FormData | Partial<Event>): Promise<Event> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.put(`/events/${id}`, eventData);
-  return response.data;
+  
+  try {
+    // Axios automatically handles FormData and sets Content-Type with boundary
+    // For JSON, the default Content-Type from createClientAPI is used
+    const config = eventData instanceof FormData 
+      ? { 
+          headers: { 
+            'Content-Type': 'multipart/form-data' // Axios will override this with boundary
+          } 
+        }
+      : {};
+    
+    const response = await clientAPI.put(`/events/${id}`, eventData, config);
+    return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 400 && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 404) {
+      throw new Error('Event not found.');
+    } else if (error.response?.status === 413) {
+      throw new Error('File too large. Maximum size is 20MB.');
+    } else {
+      throw new Error('Failed to update event. Please try again.');
+    }
+  }
 };
 
 export const deleteEvent = async (id: string): Promise<void> => {
   const clientAPI = createClientAPI();
-  await clientAPI.delete(`/events/${id}`);
+  
+  try {
+    await clientAPI.delete(`/events/${id}`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new Error('Event not found.');
+    } else {
+      throw new Error('Failed to delete event. Please try again.');
+    }
+  }
 };
 
 // Update createBlog and updateBlog to handle FormData
@@ -261,16 +367,60 @@ export const deleteBlog = async (id: string): Promise<void> => {
   await clientAPI.delete(`/blogs/${id}`);
 };
 
-export const createCareer = async (careerData: Partial<Career>): Promise<Career> => {
+export const createCareer = async (careerData: FormData | Partial<Career>): Promise<Career> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.post("/careers", careerData);
-  return response.data;
+  
+  try {
+    // Axios automatically handles FormData and sets Content-Type with boundary
+    // For JSON, the default Content-Type from createClientAPI is used
+    const config = careerData instanceof FormData 
+      ? { 
+          headers: { 
+            'Content-Type': 'multipart/form-data' // Axios will override this with boundary
+          } 
+        }
+      : {};
+    
+    const response = await clientAPI.post("/careers", careerData, config);
+    return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 400 && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 413) {
+      throw new Error('File too large. Maximum size is 20MB.');
+    } else {
+      throw new Error('Failed to create career. Please try again.');
+    }
+  }
 };
 
-export const updateCareer = async (id: string, careerData: Partial<Career>): Promise<Career> => {
+export const updateCareer = async (id: string, careerData: FormData | Partial<Career>): Promise<Career> => {
   const clientAPI = createClientAPI();
-  const response = await clientAPI.put(`/careers/${id}`, careerData);
-  return response.data;
+  
+  try {
+    // Axios automatically handles FormData and sets Content-Type with boundary
+    // For JSON, the default Content-Type from createClientAPI is used
+    const config = careerData instanceof FormData 
+      ? { 
+          headers: { 
+            'Content-Type': 'multipart/form-data' // Axios will override this with boundary
+          } 
+        }
+      : {};
+    
+    const response = await clientAPI.put(`/careers/${id}`, careerData, config);
+    return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.status === 400 && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 413) {
+      throw new Error('File too large. Maximum size is 20MB.');
+    } else {
+      throw new Error('Failed to update career. Please try again.');
+    }
+  }
 };
 
 export const deleteCareer = async (id: string): Promise<void> => {
@@ -343,6 +493,13 @@ export const deleteContact = async (id: string): Promise<void> => {
       throw new Error('Failed to delete contact.');
     }
   }
+};
+
+// Helper function to get full file URL
+export const getFileUrl = (filePath: string): string => {
+  if (!filePath) return '';
+  if (filePath.startsWith('http')) return filePath;
+  return `${API_BASE_URL}${filePath}`;
 };
 
 export { getEventId, getBlogId, getCareerId, getContactId };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Career } from "@/api/api";
+import { Career, getFileUrl } from "@/api/api";
 
 export default function CareerCard({ career }: { career: Career }) {
   const [showAllRequirements, setShowAllRequirements] = useState(false);
@@ -24,6 +24,45 @@ export default function CareerCard({ career }: { career: Career }) {
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300">
+      {/* Display Image or PDF */}
+      {career.fileType === 'image' && career.imageUrl && (
+        <div className="h-48 overflow-hidden">
+          <img
+            src={getFileUrl(career.imageUrl)}
+            alt={career.title}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+      
+      {career.fileType === 'pdf' && career.pdfUrl && (
+        <div className="h-48 bg-gradient-to-br from-red-50 to-red-100 flex flex-col items-center justify-center p-4 border-b border-red-200">
+          <svg className="w-16 h-16 text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span className="text-red-700 font-semibold text-center">PDF Document</span>
+          {career.fileSize && (
+            <p className="text-red-600 text-sm mt-1">{career.fileSize}</p>
+          )}
+          {career.pdfFileName && (
+            <p className="text-red-500 text-xs mt-1 text-center truncate max-w-full px-2">
+              {career.pdfFileName}
+            </p>
+          )}
+          <a
+            href={getFileUrl(career.pdfUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium underline"
+          >
+            View/Download PDF
+          </a>
+        </div>
+      )}
+      
       <div className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
@@ -61,7 +100,22 @@ export default function CareerCard({ career }: { career: Career }) {
             </div>
           </div>
           {career.salary && (
-            <span className="bg-desertSun text-white px-3 py-1 rounded-full text-sm font-semibold">
+            <span className="bg-desertSun text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+              <svg 
+                className="w-4 h-4 mr-1.5 flex-shrink-0" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+                style={{ minWidth: '16px', minHeight: '16px' }}
+                preserveAspectRatio="xMidYMid meet"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={1.5} 
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                />
+              </svg>
               {career.salary}
             </span>
           )}
