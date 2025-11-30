@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useState } from 'react';
 import CO from "../../../public/images/co.jpg";
+import Link from "next/link";
 
 export default function AboutUs() {
 
@@ -373,12 +374,12 @@ export default function AboutUs() {
             viewport={{ once: true }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <button className="bg-burntOrange hover:bg-opacity-90 text-white font-semibold py-3 px-8 rounded-lg transition-colors">
-              Contact Us
-            </button>
-            <button className="bg-transparent hover:bg-white/10 border-2 border-white text-white font-semibold py-3 px-8 rounded-lg transition-colors">
-              Our Services
-            </button>
+              <Link href="/contact" className="bg-burntOrange hover:bg-opacity-90 text-white font-semibold py-3 px-8 rounded-lg mr-4 transition-colors inline-block">
+                Contact Us
+              </Link>
+              <Link href="/solutions/hr" className="bg-transparent hover:bg-burntOrange hover:bg-opacity-10 border-2 border-white text-white font-semibold py-3 px-8 rounded-lg transition-colors inline-block">
+                Our Services
+              </Link>
           </motion.div>
         </div>
       </section>

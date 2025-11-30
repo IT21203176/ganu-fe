@@ -608,9 +608,6 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.4 }}
               viewport={{ once: true }}
             >
-              <Link href="/contact" className="bg-burntOrange hover:bg-opacity-90 text-white font-semibold py-3 px-8 rounded-lg mr-4 transition-colors inline-block">
-                Get Started
-              </Link>
               <Link href="/contact" className="bg-transparent hover:bg-burntOrange hover:bg-opacity-10 border-2 border-white text-white font-semibold py-3 px-8 rounded-lg transition-colors inline-block">
                 Contact Us
               </Link>

@@ -326,16 +326,10 @@ export default function FinanceSolutions() {
             viewport={{ once: true }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Link href="/contact">
-              <button className="bg-burntOrange hover:bg-opacity-90 text-white font-semibold py-3 px-8 rounded-lg transition-colors">
+            <Link href="/contact" className="bg-burntOrange hover:bg-opacity-90 text-white font-semibold py-3 px-8 rounded-lg mr-4 transition-colors inline-block">
                 Contact Us
-              </button>
-            </Link>
-            <Link href="/services">
-              <button className="bg-transparent hover:bg-white/10 border-2 border-white text-white font-semibold py-3 px-8 rounded-lg transition-colors">
-                Our Services
-              </button>
-            </Link>
+              </Link>
+            
           </motion.div>
         </div>
       </section>

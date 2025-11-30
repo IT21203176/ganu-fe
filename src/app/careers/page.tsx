@@ -174,11 +174,10 @@ export default function CareersPage() {
       <section className="pt-32 pb-20 bg-gradient-to-br from-midnightBlue via-navyBlue to-black">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            Join Our Team
+           Explore Career Opportunities
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Build your career with GANU Professional Services and be part of a
-            team that values excellence and innovation.
+            Discover career paths with GANU Professional Services and get connected to companies that value your potential.
           </p>
         </div>
       </section>

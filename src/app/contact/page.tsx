@@ -305,9 +305,7 @@ export default function ContactUs() {
             {/* Google Maps Embed */}
             <div className="w-full h-96">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3961.207741666111!2d79.94833697599698!3d6.872916093139741!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae250e4c8d5bfc9%3A0x4a7d907b310e0b4d!2s94%2F6%20Hokandara%20Rd%2C%20Hokandara%201018!5e0!3m2!1sen!2slk!4v1700000000000!5m2!1sen!2slk"
-                width="100%"
-                height="100%"
+                src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3625.8455956466346!2d79.965394!3d6.879283999999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zNsKwNTInNDUuNCJOIDc5wrA1Nyc1NS40IkU!5e1!3m2!1sen!2slk!4v1764476183277!5m2!1sen!2slk" width="600" height="450"
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
