@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { siteConfig } from '@/config/seo';
 
+export const dynamic = 'force-static';
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = siteConfig.url;
 
@@ -22,7 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/solutions/hr`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.9,
+      priority: 1.0,
     },
     {
       url: `${baseUrl}/solutions/finance`,

@@ -6,7 +6,7 @@ Disallow: /admin/
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://ganu-fe.vercel.app/sitemap.xml
+Sitemap: https://ganuprofessional.lk/sitemap.xml
 
 # Crawl-delay (optional, adjust as needed)
 Crawl-delay: 1

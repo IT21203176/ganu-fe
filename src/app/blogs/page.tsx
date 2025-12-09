@@ -1,16 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getBlogs, Blog, getBlogId, getFileUrl } from "@/api/api";
+import { Blog, getBlogId, getBlogs, getFileUrl } from "@/api/api";
+
+interface ModalImageState {
+  src: string;
+  alt: string;
+}
 
 export default function BlogsPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'article' | 'pdf'>('all');
+  const [filter, setFilter] = useState<"all" | "article" | "pdf">("all");
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
+  const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
+  const [blogImageModal, setBlogImageModal] = useState<ModalImageState | null>(null);
+  const [isBlogImageModalOpen, setIsBlogImageModalOpen] = useState(false);
 
   useEffect(() => {
     fetchBlogs();
@@ -44,10 +53,10 @@ export default function BlogsPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -68,16 +77,72 @@ export default function BlogsPage() {
     .sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()); // Sort by creation date
 
   const blogTypeCounts = {
-    'all': blogs.length,
-    'article': blogs.filter(b => !b.isPdfPost).length,
-    'pdf': blogs.filter(b => b.isPdfPost).length,
+    all: blogs.length,
+    article: blogs.filter((b) => !b.isPdfPost).length,
+    pdf: blogs.filter((b) => b.isPdfPost).length,
   };
 
   const truncateText = (text: string, maxLength: number) => {
-    if (!text) return '';
+    if (!text) return "";
     if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+    return `${text.substring(0, maxLength)}...`;
   };
+
+  const openBlogModal = (blog: Blog) => {
+    setSelectedBlog(blog);
+    setIsBlogModalOpen(true);
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  const closeBlogModal = () => {
+    setIsBlogModalOpen(false);
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "unset";
+    }
+    setTimeout(() => setSelectedBlog(null), 200);
+  };
+
+  const openBlogImageModal = (src: string, alt: string) => {
+    setBlogImageModal({ src, alt });
+    setIsBlogImageModalOpen(true);
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  const closeBlogImageModal = () => {
+    setIsBlogImageModalOpen(false);
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "unset";
+    }
+    setTimeout(() => setBlogImageModal(null), 200);
+  };
+
+  useEffect(() => {
+    if (!isBlogModalOpen) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeBlogModal();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isBlogModalOpen]);
+
+  useEffect(() => {
+    if (!isBlogImageModalOpen) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeBlogImageModal();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isBlogImageModalOpen]);
+
+  useEffect(() => () => {
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "unset";
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -217,12 +282,16 @@ export default function BlogsPage() {
                       {/* Blog Image or PDF */}
                       {/* Display Image if fileType is 'image' OR if imageUrl exists and no pdfUrl */}
                       {blog.imageUrl && (blog.fileType === 'image' || (!blog.fileType && !blog.pdfUrl)) && (
-                        <div className="h-48 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => openBlogImageModal(getFileUrl(blog.imageUrl ?? ''), blog.title)}
+                          className="h-48 w-full overflow-hidden focus:outline-none group"
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={getFileUrl(blog.imageUrl)}
                             alt={blog.title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
@@ -232,7 +301,7 @@ export default function BlogsPage() {
                               }
                             }}
                           />
-                        </div>
+                        </button>
                       )}
                       
                       {/* Display PDF if fileType is 'pdf' OR if pdfUrl exists and no imageUrl */}
@@ -325,12 +394,13 @@ export default function BlogsPage() {
                               </a>
                             </>
                           ) : (
-                            <Link
-                              href={`/blogs/${blogId}`}
+                            <button
+                              type="button"
+                              onClick={() => openBlogModal(blog)}
                               className="flex-1 bg-desertSun hover:bg-burntOrange text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center"
                             >
                               Read More
-                            </Link>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -425,6 +495,129 @@ export default function BlogsPage() {
           </div>
         </div>
       </section>
+
+      {/* Blog Detail Modal */}
+      {isBlogModalOpen && selectedBlog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={closeBlogModal}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between p-6 border-b border-gray-200">
+              <div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-2">
+                  <span className="font-medium text-midnightBlue">{selectedBlog.author}</span>
+                  {selectedBlog.createdAt && (
+                    <span>{formatDate(selectedBlog.createdAt)}</span>
+                  )}
+                  {selectedBlog.isPdfPost && (
+                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                      PDF
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-midnightBlue">
+                  {selectedBlog.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeBlogModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Close blog modal"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {selectedBlog.imageUrl && selectedBlog.fileType !== 'pdf' && (
+                <div className="rounded-2xl overflow-hidden bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={getFileUrl(selectedBlog.imageUrl)}
+                    alt={selectedBlog.title}
+                    className="w-full h-auto max-h-[420px] object-cover"
+                  />
+                </div>
+              )}
+
+              {(selectedBlog.fileType === 'pdf' || selectedBlog.isPdfPost) && selectedBlog.pdfUrl && (
+                <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-6 border border-red-200">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <p className="text-red-700 font-semibold text-lg">PDF Document</p>
+                      {selectedBlog.pdfFileName && (
+                        <p className="text-red-600 text-sm">{selectedBlog.pdfFileName}</p>
+                      )}
+                      {selectedBlog.fileSize && (
+                        <p className="text-red-500 text-xs">{selectedBlog.fileSize}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      <a
+                        href={getFileUrl(selectedBlog.pdfUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-semibold"
+                      >
+                        View PDF
+                      </a>
+                      <a
+                        href={getFileUrl(selectedBlog.pdfUrl)}
+                        download={selectedBlog.pdfFileName || 'document.pdf'}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-midnightBlue">Full Content</h3>
+                <div className="text-gray-700 whitespace-pre-line leading-relaxed">
+                  {selectedBlog.content || selectedBlog.excerpt || 'Content will be available soon.'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Blog Image Modal */}
+      {isBlogImageModalOpen && blogImageModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          onClick={closeBlogImageModal}
+        >
+          <div className="relative max-w-5xl max-h-full w-full flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={blogImageModal.src}
+              alt={blogImageModal.alt}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              type="button"
+              onClick={closeBlogImageModal}
+              className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors bg-black/50 rounded-full p-2"
+              aria-label="Close blog image modal"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

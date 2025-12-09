@@ -143,8 +143,8 @@ export default function ContactUs() {
                   </div>
                   <div>
                     <h3 className="text-white font-semibold text-lg mb-1">Phone Number</h3>
-                    <p className="text-gray-300">+94 11 2563944</p>
-                    <p className="text-gray-300">+94 76 313 1202</p>
+                    <p className="text-gray-300">+94 11 2563 944</p>
+                    <p className="text-gray-300">+94 76 3131 202</p>
                   </div>
                 </div>
 

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Blog, getFileUrl } from "@/api/api";
 
@@ -7,22 +8,74 @@ interface BlogCardProps {
 
 export default function BlogCard({ blog }: BlogCardProps) {
   const blogId = blog.id || blog._id;
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+  const openDetailModal = () => {
+    setIsDetailModalOpen(true);
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "unset";
+    }
+  };
+
+  const openImageModal = () => {
+    setIsImageModalOpen(true);
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "unset";
+    }
+  };
+
+  useEffect(() => {
+    if (!isDetailModalOpen && !isImageModalOpen) return;
+
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isDetailModalOpen) closeDetailModal();
+        if (isImageModalOpen) closeImageModal();
+      }
+    };
+
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isDetailModalOpen, isImageModalOpen]);
+
+  useEffect(() => () => {
+    if (typeof document !== "undefined") document.body.style.overflow = "unset";
+  }, []);
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
-      {/* Display Image */}
+      {/* Image */}
       {blog.imageUrl && (blog.fileType === 'image' || (!blog.fileType && !blog.pdfUrl)) && (
-        <div className="h-48 overflow-hidden">
+        <button
+          type="button"
+          onClick={openImageModal}
+          className="h-48 overflow-hidden w-full focus:outline-none group"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={getFileUrl(blog.imageUrl)}
             alt={blog.title}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
-        </div>
+        </button>
       )}
       
       {/* Display PDF */}
@@ -93,17 +146,92 @@ export default function BlogCard({ blog }: BlogCardProps) {
             </a>
           </div>
         ) : (
-          <Link
-            href={`/blogs/${blogId}`}
+          <button
+            type="button"
+            onClick={openDetailModal}
             className="inline-flex items-center text-desertSun hover:text-burntOrange font-semibold transition-colors group"
           >
             Read More
             <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-          </Link>
+          </button>
         )}
       </div>
+
+      {isDetailModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeDetailModal}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between p-6 border-b border-gray-200">
+              <div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-2">
+                  <span className="font-medium text-midnightBlue">{blog.author}</span>
+                  {blog.createdAt && <span>{new Date(blog.createdAt).toLocaleDateString()}</span>}
+                  {blog.isPdfPost && (
+                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">PDF</span>
+                  )}
+                </div>
+                <h2 className="text-2xl font-bold text-midnightBlue">{blog.title}</h2>
+              </div>
+              <button type="button" onClick={closeDetailModal} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close blog modal">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {blog.imageUrl && blog.fileType !== 'pdf' && (
+                <div className="rounded-2xl overflow-hidden bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={getFileUrl(blog.imageUrl)} alt={blog.title} className="w-full h-auto max-h-[420px] object-cover" />
+                </div>
+              )}
+
+              {(blog.fileType === 'pdf' || blog.isPdfPost) && blog.pdfUrl && (
+                <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-6 border border-red-200">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <p className="text-red-700 font-semibold text-lg">PDF Document</p>
+                      {blog.pdfFileName && <p className="text-red-600 text-sm">{blog.pdfFileName}</p>}
+                      {blog.fileSize && <p className="text-red-500 text-xs">{blog.fileSize}</p>}
+                    </div>
+                    <div className="flex gap-3">
+                      <a href={getFileUrl(blog.pdfUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-semibold">
+                        View PDF
+                      </a>
+                      <a href={getFileUrl(blog.pdfUrl)} download={blog.pdfFileName || "document.pdf"} className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors">
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-midnightBlue">Full Content</h3>
+                <div className="text-gray-700 whitespace-pre-line leading-relaxed">
+                  {blog.content || blog.excerpt || "Content will be available soon."}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isImageModalOpen && blog.imageUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={closeImageModal}>
+          <div className="relative max-w-5xl max-h-full w-full flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={getFileUrl(blog.imageUrl)} alt={blog.title} className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+            <button type="button" onClick={closeImageModal} className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors bg-black/50 rounded-full p-2" aria-label="Close blog image modal">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

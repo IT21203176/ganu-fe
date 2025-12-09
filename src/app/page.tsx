@@ -18,7 +18,10 @@ import BamoraLogo from "../../public/images/clients/logo-bamoramedia.lk_.png";
 import TopbookkeeperLogo from "../../public/images/clients/Logoclr.png";
 import RigorLogo from "../../public/images/clients/rigor_logo.png";
 import TechgatesLogo from "../../public/images/clients/techgates-logo-11-10-2016.png";
-import LL from "../../public/images/clients/ll.jpg";
+import BS from "../../public/images/clients/BS.jpeg";
+import CAL from "../../public/images/clients/CAL.jpeg"
+import ML from "../../public/images/clients/ML.jpeg"
+import SE from "../../public/images/clients/SE.png"
 
 export default function Home() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -98,7 +101,10 @@ export default function Home() {
     { src: TopbookkeeperLogo, alt: "Topbookkeeper", name: "Topbookkeeper" },
     { src: RigorLogo, alt: "Rigor Consulting", name: "Rigor Consulting" },
     { src: TechgatesLogo, alt: "Techgates", name: "Techgates" },
-    { src: LL, alt: "LL", name: "LL" },
+    { src: BS, alt: "BS", name: "BS" },
+    { src: CAL, alt: "CAL", name: "CAL" },
+    { src: ML, alt: "ML", name: "ML" },
+    { src: SE, alt: "SE", name: "SE" },
   ];
   
   const testimonials = [
@@ -327,7 +333,7 @@ export default function Home() {
                   GANU Professional Services is a leading provider of comprehensive HR and financial solutions 
                   tailored to meet the unique needs of businesses across various industries.
                 </p>
-                <p className="text-gray-300 mb-4">
+                <p className="text-gray-300 mb-4 text-justify">
                   With years of experience and a team of dedicated experts, we deliver innovative strategies 
                   that drive organizational growth, enhance operational efficiency, and maximize human capital potential.
                 </p>

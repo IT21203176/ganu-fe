@@ -13,6 +13,8 @@ export default function PublicEvents() {
   const [filter, setFilter] = useState<'all' | 'news' | 'event'>('all');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -62,6 +64,21 @@ export default function PublicEvents() {
     setSelectedEvent(event);
     setIsModalOpen(true);
   };
+  const openImageModal = (imageUrl: string, alt: string) => {
+    setSelectedImage({ url: imageUrl, alt });
+    setIsImageModalOpen(true);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'unset';
+    }
+    setTimeout(() => setSelectedImage(null), 200);
+  };
 
   const closeEventModal = () => {
     setSelectedEvent(null);
@@ -86,6 +103,23 @@ export default function PublicEvents() {
       document.body.style.overflow = 'unset';
     };
   }, [isModalOpen]);
+
+  useEffect(() => {
+    if (!isImageModalOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeImageModal();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isImageModalOpen]);
 
   if (loading) {
     return (
@@ -243,12 +277,16 @@ export default function PublicEvents() {
                     >
                       {/* Event Image or PDF */}
                       {event.fileType === 'image' && event.imageUrl && (
-                        <div className="h-48 overflow-hidden relative">
+                        <button
+                          type="button"
+                          onClick={() => openImageModal(getFileUrl(event.imageUrl ?? ''), event.title)}
+                          className="h-48 overflow-hidden relative w-full focus:outline-none group"
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={getFileUrl(event.imageUrl)}
                             alt={event.title}
-                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none';
                             }}
@@ -263,7 +301,7 @@ export default function PublicEvents() {
                               {event.type === 'news' ? 'News' : 'Event'}
                             </span>
                           </div>
-                        </div>
+                        </button>
                       )}
                       {event.fileType === 'pdf' && event.pdfUrl && (
                         <div className="h-48 bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center relative">
@@ -324,14 +362,12 @@ export default function PublicEvents() {
                           <p className="text-gray-600 line-clamp-3">
                             {event.description}
                           </p>
-                          {isDescriptionLong(event.description) && (
-                            <button
-                              onClick={() => openEventModal(event)}
-                              className="text-desertSun hover:text-burntOrange font-medium text-sm mt-2 transition-colors"
-                            >
-                              Read More
-                            </button>
-                          )}
+                          <button
+                            onClick={() => openEventModal(event)}
+                            className="text-desertSun hover:text-burntOrange font-medium text-sm mt-2 transition-colors"
+                          >
+                            Read More
+                          </button>
                         </div>
 
                         {/* PDF Download Link */}
@@ -433,6 +469,34 @@ export default function PublicEvents() {
       </section>
 
       <Footer />
+
+      {/* Event Image Modal */}
+      {isImageModalOpen && selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          onClick={closeImageModal}
+        >
+          <div className="relative max-w-5xl max-h-full w-full flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.alt}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              type="button"
+              onClick={closeImageModal}
+              className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors bg-black/50 rounded-full p-2"
+              aria-label="Close image modal"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Event Details Modal */}
       {isModalOpen && selectedEvent && (

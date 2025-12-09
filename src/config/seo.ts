@@ -3,14 +3,32 @@ import type { Metadata } from "next";
 
 export const siteConfig = {
   name: "GANU Professional Services",
-  description: "GANU Professional Services - Your partner in HR excellence. Leading provider of comprehensive HR, Finance, Secretariat, and General Administration solutions in Sri Lanka. Trusted by industry leaders for payroll management, EPF/ETF services, compliance, and business growth.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://ganu-fe.vercel.app",
+  description: "Leading HR Services in Sri Lanka & Colombo | EPF ETF Services | HR Consultancy & Outsourcing. GANU Professional Services provides comprehensive HR solutions, payroll management, EPF/ETF services, HR consultancy, and HR outsourcing services across Sri Lanka. Trusted HR partner for businesses in Colombo and nationwide.",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://ganuprofessional.lk",
   ogImage: "/images/logo.png",
   keywords: [
-    "HR solutions",
-    "Human Resources",
-    "Payroll management",
-    "HR compliance",
+    // Primary target keywords
+    "HR services in sri lanka",
+    "HR Services in colombo",
+    "HR Services sri lanka",
+    "HR Consultancy services sri lanka",
+    "EPF ETF Services Sri lanka",
+    "HR Outsource services sri lanka",
+    // Secondary keywords
+    "HR solutions Sri Lanka",
+    "Human Resources Sri Lanka",
+    "HR consultancy Colombo",
+    "HR outsourcing Sri Lanka",
+    "Payroll management Sri Lanka",
+    "EPF services Sri Lanka",
+    "ETF services Sri Lanka",
+    "HR compliance Sri Lanka",
+    "HR services Colombo",
+    "Professional HR services",
+    "HR consulting Sri Lanka",
+    "HR outsourcing Colombo",
+    "Employee management Sri Lanka",
+    "HR solutions Colombo",
     "Finance solutions",
     "Accounting services",
     "Taxation",
@@ -18,11 +36,7 @@ export const siteConfig = {
     "Company registration",
     "Corporate compliance",
     "General administration",
-    "Business services",
-    "Sri Lanka",
-    "Professional services",
-    "HR consulting",
-    "Financial consulting"
+    "Business services Sri Lanka"
   ],
   author: "GANU Professional Services",
   locale: "en_US",
@@ -31,7 +45,7 @@ export const siteConfig = {
 
 export const defaultMetadata = {
   title: {
-    default: siteConfig.name,
+    default: "HR Services in Sri Lanka & Colombo | EPF ETF Services | GANU Professional",
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
@@ -76,6 +90,15 @@ export const defaultMetadata = {
       "max-snippet": -1,
     } as const,
   } as Metadata["robots"],
+  icons: {
+    icon: [
+      { url: "/images/logo.png", type: "image/png" },
+      // { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: [
+      { url: "/images/logo.png", type: "image/png" },
+    ],
+  },
   verification: {
     // Add verification codes when available
     // google: "your-google-verification-code",
@@ -154,14 +177,30 @@ export function generateOrganizationSchema() {
       // "https://www.linkedin.com/company/ganupro",
       // "https://twitter.com/ganupro",
     ],
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "Customer Service",
-      email: "service@ganuprofessional.lk",
-      telephone: "+94-11-2563944",
-      areaServed: "LK",
-      availableLanguage: "en",
-    },
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "Customer Service",
+        email: "ganuprofessional@gmail.com",
+        telephone: "+94-11-2563944",
+        areaServed: ["LK", "Western Province", "Colombo"],
+        availableLanguage: "en",
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "Sales",
+        telephone: "+94-773-981-202",
+        areaServed: ["LK", "Western Province", "Colombo"],
+        availableLanguage: "en",
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "Support",
+        telephone: "+94-742-672-927",
+        areaServed: ["LK", "Western Province", "Colombo"],
+        availableLanguage: "en",
+      }
+    ],
   };
 }
 
@@ -196,9 +235,24 @@ export function generateLocalBusinessSchema() {
       opens: "09:00",
       closes: "17:00",
     },
-    areaServed: {
-      "@type": "Country",
-      name: "Sri Lanka",
+    areaServed: [
+      {
+        "@type": "Country",
+        name: "Sri Lanka",
+      },
+      {
+        "@type": "City",
+        name: "Colombo",
+      },
+      {
+        "@type": "State",
+        name: "Western Province",
+      }
+    ],
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: "6.9271",
+      longitude: "79.8612",
     },
   };
 }
@@ -230,10 +284,32 @@ export function generateServiceSchema(serviceName: string, description: string) 
       "@type": "Organization",
       name: siteConfig.name,
     },
-    areaServed: {
-      "@type": "Country",
-      name: "Sri Lanka",
-    },
+    areaServed: [
+      {
+        "@type": "Country",
+        name: "Sri Lanka",
+      },
+      {
+        "@type": "City",
+        name: "Colombo",
+      }
+    ],
+  };
+}
+
+// FAQ Schema for common HR service questions
+export function generateFAQSchema(faqs: Array<{ question: string; answer: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map(faq => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
   };
 }
 
