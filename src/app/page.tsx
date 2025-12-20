@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import VideoBackground from "@/components/VideoBackground";
 import Image from "next/image";
 import Logo from "../../public/images/logo.png";
-import CO from "../../public/images/co.jpg";
+import CO from "../../public/images/christmas.png";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import Link from 'next/link';
