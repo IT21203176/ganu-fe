@@ -68,7 +68,6 @@ export default function AdminLayout({
       setUnreadContacts(unread);
     } catch (error) {
       console.error('Failed to fetch unread contacts:', error);
-      // Don't block the layout if contacts fail to load
       setUnreadContacts(0);
     }
   };
@@ -96,9 +95,11 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Admin Header */}
-      <nav className="bg-midnightBlue text-white shadow-lg">
+    /* Changed min-h-screen to h-screen and added overflow-hidden */
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      
+      {/* Admin Header (Fixed at the top) */}
+      <nav className="bg-midnightBlue text-white shadow-lg flex-shrink-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -134,11 +135,12 @@ export default function AdminLayout({
         </div>
       </nav>
 
-      {/* Sidebar and Main Content */}
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white shadow-lg min-h-screen">
-          <nav className="mt-8">
+      {/* Sidebar and Main Content Area (Takes up remaining height) */}
+      <div className="flex flex-1 overflow-hidden">
+        
+        {/* Sidebar (Fixed Width, Scrolls vertically if needed) */}
+        <div className="w-64 bg-white shadow-lg overflow-y-auto flex-shrink-0">
+          <nav className="mt-8 pb-8">
             <div className="px-4 space-y-1">
               <Link
                 href="/admin/dashboard"
@@ -215,7 +217,14 @@ export default function AdminLayout({
                 )}
               </Link>
 
-              <Link href="/admin/media" className="p-3 rounded-lg hover:bg-gray-100 text-gray-700 flex items-center gap-2">
+              <Link 
+                href="/admin/media" 
+                className={`flex items-center px-4 py-3 rounded-lg transition-colors font-medium ${
+                  pathname.includes('/admin/media') 
+                    ? 'bg-desertSun/10 text-desertSun border-r-2 border-desertSun' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
                 <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
@@ -225,8 +234,8 @@ export default function AdminLayout({
           </nav>
         </div>
 
-        {/* Main Content */}
-        <main className="flex-1 p-8">
+        {/* Main Content (Scrollable) */}
+        <main className="flex-1 overflow-y-auto overflow-x-auto p-8">
           {children}
         </main>
       </div>

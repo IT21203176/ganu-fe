@@ -77,6 +77,12 @@ export default function Home() {
     updateDots(newSlide);
   };
 
+  // Builds a small JPG thumbnail of a Cloudinary video (first frame)
+  const getVideoThumb = (url: string, second = 2) =>
+    url
+      .replace("/upload/", `/upload/so_${second},w_600,q_auto,f_jpg/`)
+      .replace(/\.[a-z0-9]+$/i, ".jpg");
+
   const updateDots = (activeIndex: number) => {
     const dots = document.querySelectorAll('.carousel-dot');
     dots.forEach((dot, index) => {
@@ -382,58 +388,73 @@ export default function Home() {
       </motion.div>
 
       {/* Dynamic Media Container */}
-      <motion.div
-        initial={{ opacity: 0, x: 30 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-        className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center"
-      >
+      {/* Dynamic Media Container */}
+<motion.div
+  initial={{ opacity: 0, x: 30 }}
+  whileInView={{ opacity: 1, x: 0 }}
+  transition={{ duration: 0.6 }}
+  viewport={{ once: true }}
+  className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center"
+>
+  {loadingMedia ? (
+    <div className="absolute inset-0 animate-pulse bg-gray-800" />
+  ) : media?.url && media?.resourceType === "video" ? (
+    <>
+      {/* Blurred backdrop (fills side space for portrait videos) */}
+      <img
+        src={getVideoThumb(media.url)}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-60"
+      />
 
-        {loadingMedia ? (
-          <div className="absolute inset-0 animate-pulse bg-gray-800" />
+<video
+  key={media.url}
+  src={`${media.url}#t=2`}
+  poster={getVideoThumb(media.url)}
+  className="relative z-10 w-full h-full object-contain"
+  controls
+  playsInline
+  preload="metadata"
+  aria-label="GANU Professional Services introduction video"
+  onPlay={(e) => {
+    // `#t=2` also sets the start time in some browsers, so rewind on first play
+    if (e.currentTarget.currentTime >= 2 && e.currentTarget.currentTime < 2.5) {
+      e.currentTarget.currentTime = 0;
+    }
+  }}
+  onError={(e) => {
+    console.error("Video playback error:", e.currentTarget.error, media.url);
+  }}
+/>
+    </>
+  ) : media?.url && media?.resourceType === "image" ? (
+    <>
+      {/* Blurred backdrop (fills side space for portrait images) */}
+      <img
+        src={media.url}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-60"
+      />
 
-        ) : media?.url && media?.resourceType === "video" ? (
-
-          <video
-            key={media.url}
-            src={media.url}
-            className="w-full h-full object-contain"
-            controls
-            playsInline
-            preload="metadata"
-            aria-label="GANU Professional Services introduction video"
-            onError={(e) => {
-              console.error(
-                "Video playback error:",
-                e.currentTarget.error,
-                media.url
-              );
-            }}
-          />
-
-        ) : media?.url && media?.resourceType === "image" ? (
-
-          <img
-            key={media.url}
-            src={media.url}
-            alt={media.title || "GANU Professional Services"}
-            className="w-full h-full object-contain bg-white"
-            loading="lazy"
-            onError={() => {
-              console.error("Image failed to load:", media.url);
-            }}
-          />
-
-        ) : (
-
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <p>No company media uploaded yet.</p>
-          </div>
-
-        )}
-
-      </motion.div>
+      <img
+        key={media.url}
+        src={media.url}
+        alt={media.title || "GANU Professional Services"}
+        className="relative z-10 w-full h-full object-contain"
+        loading="lazy"
+        onError={() => {
+          console.error("Image failed to load:", media.url);
+        }}
+      />
+    </>
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-gray-400">
+      <p>No company media uploaded yet.</p>
+    </div>
+  )}
+</motion.div>
 
     </div>
   </div>
