@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getAdminMedia, registerMedia, deleteMedia, MediaItem } from "@/api/api";
 import Script from "next/script";
 
-// Define types for the Cloudinary Widget to avoid using 'any'
+// Define types for the Cloudinary Widget to avoid TypeScript crashes
 interface CloudinaryWidgetResult {
   event: string;
   info: {
@@ -21,13 +21,21 @@ interface CloudinaryWidgetError {
   message: string;
 }
 
+// Extend the Window interface so TypeScript knows about window.cloudinary
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    cloudinary: any;
+  }
+}
+
 export default function AdminMediaPage() {
   const [mediaList, setMediaList] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video'>('all');
   const [uploading, setUploading] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
-  // Fetch media list
   const fetchMedia = useCallback(async () => {
     try {
       setLoading(true);
@@ -36,7 +44,6 @@ export default function AdminMediaPage() {
       setMediaList(data);
     } catch (error) {
       console.error("Failed to fetch media", error);
-      alert("Failed to load media list.");
     } finally {
       setLoading(false);
     }
@@ -46,53 +53,51 @@ export default function AdminMediaPage() {
     fetchMedia();
   }, [fetchMedia]);
 
-  // Handle Cloudinary Widget Upload
   const openCloudinaryWidget = () => {
-    // @ts-expect-error cloudinary is loaded via script
-    if (typeof window !== "undefined" && window.cloudinary) {
-      // @ts-expect-error cloudinary is loaded via script
-      const widget = window.cloudinary.createUploadWidget(
-        {
-          cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-          uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
-          folder: "ganu/media",
-          resourceType: "auto",
-          multiple: false,
-          maxFileSize: 50000000, // 50MB limit
-          clientAllowedFormats: ["jpg", "png", "jpeg", "webp", "mp4", "mov", "webm"],
-        },
-        async (error: CloudinaryWidgetError | null, result: CloudinaryWidgetResult | null) => {
-          if (!error && result && result.event === "success") {
-            setUploading(true);
-            const fileInfo = result.info;
+    // Safety check: Don't crash if script hasn't loaded yet
+    if (!scriptLoaded || !window.cloudinary) {
+      alert("Cloudinary widget is still loading. Please wait a moment and try again.");
+      return;
+    }
+
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+        uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+        folder: "ganu/media",
+        resourceType: "auto",
+        multiple: false,
+        maxFileSize: 50000000, // 50MB limit
+        clientAllowedFormats: ["jpg", "png", "jpeg", "webp", "mp4", "mov", "webm"],
+      },
+      async (error: CloudinaryWidgetError | null, result: CloudinaryWidgetResult | null) => {
+        if (!error && result && result.event === "success") {
+          setUploading(true);
+          const fileInfo = result.info;
+          
+          try {
+            await registerMedia({
+              title: fileInfo.original_filename,
+              url: fileInfo.secure_url,
+              publicId: fileInfo.public_id,
+              resourceType: fileInfo.resource_type === "video" ? "video" : "image",
+              format: fileInfo.format,
+              bytes: fileInfo.bytes,
+              originalName: fileInfo.original_filename,
+            });
             
-            try {
-              await registerMedia({
-                title: fileInfo.original_filename,
-                url: fileInfo.secure_url,
-                publicId: fileInfo.public_id,
-                resourceType: fileInfo.resource_type === "video" ? "video" : "image",
-                format: fileInfo.format,
-                bytes: fileInfo.bytes,
-                originalName: fileInfo.original_filename,
-              });
-              
-              alert("Upload successful and saved to database!");
-              fetchMedia(); 
-            } catch (error) {
-              // Changed 'err' to 'error' and logged it to satisfy eslint
-              console.error("Failed to save to DB:", error);
-              alert("Uploaded to Cloudinary, but failed to save to database.");
-            } finally {
-              setUploading(false);
-            }
+            alert("Upload successful and saved to database!");
+            fetchMedia(); 
+          } catch (error) {
+            console.error("Failed to save to DB:", error);
+            alert("Uploaded to Cloudinary, but failed to save to database. Check your Vercel environment variables.");
+          } finally {
+            setUploading(false);
           }
         }
-      );
-      widget.open();
-    } else {
-      alert("Cloudinary widget not loaded yet. Please try again.");
-    }
+      }
+    );
+    widget.open();
   };
 
   const handleDelete = async (id: string) => {
@@ -116,8 +121,12 @@ export default function AdminMediaPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Load Cloudinary Widget Script */}
-      <Script src="https://upload-widget.cloudinary.com/global/all.js" strategy="lazyOnload" />
+      {/* Load script before page becomes interactive */}
+      <Script 
+        src="https://upload-widget.cloudinary.com/global/all.js" 
+        strategy="beforeInteractive"
+        onLoad={() => setScriptLoaded(true)}
+      />
 
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -133,7 +142,6 @@ export default function AdminMediaPage() {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex space-x-4 mb-6 border-b pb-4">
         {(['all', 'image', 'video'] as const).map((f) => (
           <button
@@ -148,7 +156,6 @@ export default function AdminMediaPage() {
         ))}
       </div>
 
-      {/* Media Grid */}
       {loading ? (
         <div className="text-center py-20 text-gray-500">Loading media...</div>
       ) : mediaList.length === 0 ? (
@@ -162,7 +169,6 @@ export default function AdminMediaPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {mediaList.map((media) => (
             <div key={media._id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-              {/* Preview Area */}
               <div className="relative aspect-video bg-gray-100 flex items-center justify-center overflow-hidden">
                 {media.resourceType === 'video' ? (
                   <video src={media.url} className="w-full h-full object-cover" controls />
@@ -171,8 +177,6 @@ export default function AdminMediaPage() {
                   <img src={media.url} alt={media.title} className="w-full h-full object-cover" />
                 )}
               </div>
-              
-              {/* Info Area */}
               <div className="p-4 flex-grow">
                 <h3 className="font-semibold text-gray-900 truncate" title={media.title}>
                   {media.title}
@@ -181,8 +185,6 @@ export default function AdminMediaPage() {
                   {media.format} • {formatBytes(media.bytes)}
                 </p>
               </div>
-
-              {/* Actions */}
               <div className="px-4 py-3 bg-gray-50 border-t flex justify-end">
                 <button
                   onClick={() => handleDelete(media._id)}
