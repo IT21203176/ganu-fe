@@ -344,52 +344,101 @@ export default function Home() {
 
       {/* Rest of the page content without Video background */}
       <div className="bg-black">
-        {/* Company Overview Section */}
-        <section ref={companyOverviewRef} className="py-20 bg-black">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-              >
-                <h3 className="text-2xl font-semibold text-white mb-6">Who We Are</h3>
-                <p className="text-gray-300 mb-4 text-justify">
-                  GANU Professional Services is a leading provider of comprehensive HR and financial solutions 
-                  tailored to meet the unique needs of businesses across various industries.
-                </p>
-                <p className="text-gray-300 mb-4 text-justify">
-                  With years of experience and a team of dedicated experts, we deliver innovative strategies 
-                  that drive organizational growth, enhance operational efficiency, and maximize human capital potential.
-                </p>
-                <Link href="/about-us">
-                  <button className="bg-burntOrange hover:bg-opacity-90 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md hover:shadow-lg cursor-pointer">
-                    Learn More About Us
-                  </button>
-                </Link>
-              </motion.div>
-              
-              {/* MEDIA CONTAINER */}
-              <div className="w-full aspect-video bg-black rounded-xl overflow-hidden">
-  <video
-    src="https://res.cloudinary.com/dgxm2vmpe/video/upload/v1795070082/ganu/media/tcsqldiqhgje9lcruaya.mp4"
-    controls
-    preload="auto"
-    playsInline
-    style={{
-      width: "100%",
-      height: "100%",
-      display: "block",
-      objectFit: "contain",
-      pointerEvents: "auto",
-    }}
-    onError={(e) => console.error("VIDEO ERROR:", e.currentTarget.error)}
-  />
-</div>
-            </div>
+        
+{/* Company Overview Section */}
+<section ref={companyOverviewRef} className="py-20 bg-black">
+  <div className="max-w-7xl mx-auto px-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+
+      {/* Company Information */}
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+      >
+        <h3 className="text-2xl font-semibold text-white mb-6">
+          Who We Are
+        </h3>
+
+        <p className="text-gray-300 mb-4 text-justify">
+          GANU Professional Services is a leading provider of
+          comprehensive HR and financial solutions tailored to
+          meet the unique needs of businesses across various industries.
+        </p>
+
+        <p className="text-gray-300 mb-4 text-justify">
+          With years of experience and a team of dedicated experts,
+          we deliver innovative strategies that drive organizational
+          growth, enhance operational efficiency, and maximize
+          human capital potential.
+        </p>
+
+        <Link href="/about-us">
+          <button className="bg-burntOrange hover:bg-opacity-90 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md hover:shadow-lg cursor-pointer">
+            Learn More About Us
+          </button>
+        </Link>
+      </motion.div>
+
+      {/* Dynamic Media Container */}
+      <motion.div
+        initial={{ opacity: 0, x: 30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+        className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center"
+      >
+
+        {loadingMedia ? (
+          <div className="absolute inset-0 animate-pulse bg-gray-800" />
+
+        ) : media?.url && media?.resourceType === "video" ? (
+
+          <video
+            key={media.url}
+            src={media.url}
+            className="w-full h-full object-contain"
+            controls
+            playsInline
+            preload="metadata"
+            aria-label="GANU Professional Services introduction video"
+            onError={(e) => {
+              console.error(
+                "Video playback error:",
+                e.currentTarget.error,
+                media.url
+              );
+            }}
+          />
+
+        ) : media?.url && media?.resourceType === "image" ? (
+
+          <img
+            key={media.url}
+            src={media.url}
+            alt={media.title || "GANU Professional Services"}
+            className="w-full h-full object-contain bg-white"
+            loading="lazy"
+            onError={() => {
+              console.error("Image failed to load:", media.url);
+            }}
+          />
+
+        ) : (
+
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            <p>No company media uploaded yet.</p>
           </div>
-        </section>
+
+        )}
+
+      </motion.div>
+
+    </div>
+  </div>
+</section>
+
 
         {/* Solutions Section */}
         <section className="py-20 bg-midnightBlue">
