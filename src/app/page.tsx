@@ -371,66 +371,22 @@ export default function Home() {
               </motion.div>
               
               {/* MEDIA CONTAINER */}
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-                className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center"
-              >
-                {loadingMedia ? (
-                  <div className="absolute inset-0 animate-pulse bg-gray-800" />
-                ) : media?.resourceType === "video" ? (
-                  <>
-                    {/* Blurred Background Video - object-cover fills the box (crops edges) */}
-                    <video
-                      ref={introBackdropRef}
-                      src={media.url}
-                      className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60 pointer-events-none"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      aria-hidden="true"
-                      tabIndex={-1}
-                    />
-                    {/* Main Video - object-contain shows the whole video (no cropping) */}
-                    <video
-                      src={media.url}
-                      className="relative z-10 w-full h-full object-contain"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      controls
-                      aria-label="GANU Professional Services introduction video"
-                      onPlay={() => introBackdropRef.current?.play().catch(() => {})}
-                      onPause={() => introBackdropRef.current?.pause()}
-                      onSeeked={(e) => {
-                        if (introBackdropRef.current) introBackdropRef.current.currentTime = e.currentTarget.currentTime;
-                      }}
-                    />
-                  </>
-                ) : media?.resourceType === "image" ? (
-                  /* Image: object-contain prevents zooming/cropping. Background is set to white for the logo */
-                  <img
-                    src={media.url}
-                    alt={media.title || "GANU Professional Services"}
-                    className="relative z-10 w-full h-full object-contain p-4 md:p-8 bg-white" 
-                  />
-                ) : (
-                  /* Fallback */
-                  <video
-                    src="/images/Intro.mp4"
-                    className="relative z-10 w-full h-full object-contain"
-                    autoPlay 
-                    muted 
-                    loop 
-                    playsInline 
-                    controls
-                  />
-                )}
-              </motion.div>
+              <div className="w-full aspect-video bg-black rounded-xl overflow-hidden">
+  <video
+    src="https://res.cloudinary.com/dgxm2vmpe/video/upload/v1795070082/ganu/media/tcsqldiqhgje9lcruaya.mp4"
+    controls
+    preload="auto"
+    playsInline
+    style={{
+      width: "100%",
+      height: "100%",
+      display: "block",
+      objectFit: "contain",
+      pointerEvents: "auto",
+    }}
+    onError={(e) => console.error("VIDEO ERROR:", e.currentTarget.error)}
+  />
+</div>
             </div>
           </div>
         </section>
