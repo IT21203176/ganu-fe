@@ -97,7 +97,7 @@ const Header = () => {
             )}
           </div>
           
-          <Link href="/events" className="hover:text-desertSun transition-colors font-medium">Events</Link>
+          <Link href="/events" className="hover:text-desertSun transition-colors font-medium">News</Link>
           <Link href="/blogs" className="hover:text-desertSun transition-colors font-medium">Blogs</Link>
           <Link href="/careers" className="hover:text-desertSun transition-colors font-medium">Careers</Link>
           <Link href="/contact" className="hover:text-desertSun transition-colors font-medium">Contact Us</Link>

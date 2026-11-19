@@ -5,7 +5,6 @@ import Footer from "@/components/Footer";
 import VideoBackground from "@/components/VideoBackground";
 import Image from "next/image";
 import Logo from "../../public/images/logo.png";
-import CO from "../../public/images/christmas.png";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import Link from 'next/link';
@@ -22,17 +21,33 @@ import BS from "../../public/images/clients/BS.jpeg";
 import CAL from "../../public/images/clients/CAL.jpeg"
 import ML from "../../public/images/clients/ML.jpeg"
 import SE from "../../public/images/clients/SE.png"
+import Ansell from "../../public/images/clients/Ansell.png"
+import Gini from "../../public/images/clients/gini.png"
+import TUV from "../../public/images/clients/tuv.jpg"
+import Verora from "../../public/images/clients/verora.jpg"
+import GreenCosmo from "../../public/images/clients/Green.jpeg"
+import UKEngineering from "../../public/images/clients/UK.jpeg"
+import Compass from "../../public/images/clients/compass.jpeg"
+
+// Media API
+import { getPublicMedia, MediaItem } from "@/api/api";
 
 export default function Home() {
   const heroRef = useRef<HTMLDivElement>(null);
   const companyOverviewRef = useRef<HTMLDivElement>(null);
+  const introBackdropRef = useRef<HTMLVideoElement>(null);
+  
+  // Media State
+  const [media, setMedia] = useState<MediaItem | null>(null);
+  const [loadingMedia, setLoadingMedia] = useState(true);
+
   const { scrollY } = useScroll();
   
   // Calculate opacity for header based on scroll position
   const headerOpacity = useTransform(
     scrollY,
-    [0, 200], // Start fading in when scrolled 200px
-    [0, 1]     // From transparent to fully opaque
+    [0, 200], 
+    [0, 1]     
   );
 
   // Function to scroll to the company overview section
@@ -59,10 +74,8 @@ export default function Home() {
       carousel.style.transform = `translateX(-${newSlide * 100}%)`;
     }
     
-    // Update dots
     updateDots(newSlide);
   };
-
 
   const updateDots = (activeIndex: number) => {
     const dots = document.querySelectorAll('.carousel-dot');
@@ -81,7 +94,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       moveCarousel(1);
-    }, 5000); // Change slide every 5 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,7 +105,23 @@ export default function Home() {
     updateDots(0);
   }, []);
 
-  // Client logos array
+  // Fetch latest media from database
+  useEffect(() => {
+    const fetchMedia = async () => {
+      try {
+        const allMedia = await getPublicMedia(); // Fetch both images and videos
+        if (allMedia && allMedia.length > 0) {
+          setMedia(allMedia[0]); // Use the most recent one
+        }
+      } catch (error) {
+        console.error("Failed to fetch public media:", error);
+      } finally {
+        setLoadingMedia(false);
+      }
+    };
+    fetchMedia();
+  }, []);
+
   const clientLogos = [
     { src: ChillLogo, alt: "Colombo Chill", name: "Colombo Chill" },
     { src: HearingLogo, alt: "Miracle L Speech & Hearing Center", name: "Miracle L Speech & Hearing Center" },
@@ -105,6 +134,13 @@ export default function Home() {
     { src: CAL, alt: "CAL", name: "CAL" },
     { src: ML, alt: "ML", name: "ML" },
     { src: SE, alt: "SE", name: "SE" },
+    { src: Ansell, alt: "Ansell", name: "Ansell" },
+    { src: Gini, alt: "Gini", name: "Gini" },
+    { src: TUV, alt: "TUV", name: "TUV" },
+    { src: Verora, alt: "Verora", name: "Verora" },
+    { src: GreenCosmo, alt: "Herbal Green Cosmo", name: "Herbal Green Cosmo" },
+    { src: UKEngineering, alt: "UK Engineering", name: "UK Engineering" },
+    { src: Compass, alt: "Compass", name: "Compass" },
   ];
   
   const testimonials = [
@@ -311,16 +347,6 @@ export default function Home() {
         {/* Company Overview Section */}
         <section ref={companyOverviewRef} className="py-20 bg-black">
           <div className="max-w-7xl mx-auto px-6">
-            <motion.h2 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-3xl md:text-4xl font-bold text-center text-desertSun mb-12"
-            >
-              Company Overview
-            </motion.h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
@@ -344,19 +370,66 @@ export default function Home() {
                 </Link>
               </motion.div>
               
+              {/* MEDIA CONTAINER */}
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className="relative h-80 rounded-xl overflow-hidden shadow-lg"
+                className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center"
               >
-                <Image 
-                  src={CO}
-                  alt="Company Overview" 
-                  fill
-                  className="object-cover"
-                />
+                {loadingMedia ? (
+                  <div className="absolute inset-0 animate-pulse bg-gray-800" />
+                ) : media?.resourceType === "video" ? (
+                  <>
+                    {/* Blurred Background Video - object-cover fills the box (crops edges) */}
+                    <video
+                      ref={introBackdropRef}
+                      src={media.url}
+                      className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60 pointer-events-none"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      aria-hidden="true"
+                      tabIndex={-1}
+                    />
+                    {/* Main Video - object-contain shows the whole video (no cropping) */}
+                    <video
+                      src={media.url}
+                      className="relative z-10 w-full h-full object-contain"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      controls
+                      aria-label="GANU Professional Services introduction video"
+                      onPlay={() => introBackdropRef.current?.play().catch(() => {})}
+                      onPause={() => introBackdropRef.current?.pause()}
+                      onSeeked={(e) => {
+                        if (introBackdropRef.current) introBackdropRef.current.currentTime = e.currentTarget.currentTime;
+                      }}
+                    />
+                  </>
+                ) : media?.resourceType === "image" ? (
+                  /* Image: object-contain prevents zooming/cropping. Background is set to white for the logo */
+                  <img
+                    src={media.url}
+                    alt={media.title || "GANU Professional Services"}
+                    className="relative z-10 w-full h-full object-contain p-4 md:p-8 bg-white" 
+                  />
+                ) : (
+                  /* Fallback */
+                  <video
+                    src="/images/Intro.mp4"
+                    className="relative z-10 w-full h-full object-contain"
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline 
+                    controls
+                  />
+                )}
               </motion.div>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getEvents, deleteEvent, Event, getEventId, getFileUrl } from "@/api/api";
+import { getEvents, deleteEvent, Event, getEventId, getFileUrl, sortNewestFirst } from "@/api/api";
 
 export default function EventsManagement() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -17,7 +17,7 @@ export default function EventsManagement() {
   const fetchEvents = async () => {
     try {
       const eventsData = await getEvents();
-      setEvents(eventsData);
+      setEvents(sortNewestFirst(eventsData));
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {

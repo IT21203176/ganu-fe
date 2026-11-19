@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getAdminBlogs, deleteBlog, updateBlog, Blog, getBlogId, getFileUrl } from "@/api/api";
+import { getAdminBlogs, deleteBlog, updateBlog, Blog, getBlogId, getFileUrl, sortNewestFirst } from "@/api/api";
 
 export default function BlogsManagement() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -38,7 +38,7 @@ export default function BlogsManagement() {
       const blogsData = await getAdminBlogs(); // Use admin endpoint to get all blogs including drafts
       // Log for debugging
       console.log('Admin fetched blogs:', blogsData);
-      setBlogs(blogsData);
+      setBlogs(sortNewestFirst(blogsData));
     } catch (error) {
       console.error('Error fetching blogs:', error);
       alert('Error fetching blogs');

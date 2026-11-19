@@ -516,6 +516,61 @@ export const deleteContact = async (id: string): Promise<void> => {
   }
 };
 
+// Add to src/api/api.ts
+
+export interface MediaItem {
+  _id: string;
+  title: string;
+  description?: string;
+  url: string;
+  publicId: string;
+  resourceType: 'image' | 'video';
+  format: string;
+  bytes: number;
+  originalName?: string;
+  createdAt: string;
+}
+
+// Get all media (for admin dashboard)
+export const getAdminMedia = async (type?: 'image' | 'video'): Promise<MediaItem[]> => {
+  const clientAPI = createClientAPI();
+  const url = type ? `/media?type=${type}` : '/media';
+  const response = await clientAPI.get(url);
+  return response.data;
+};
+
+// Register media after Cloudinary Widget upload
+export const registerMedia = async (data: Partial<MediaItem>): Promise<MediaItem> => {
+  const clientAPI = createClientAPI();
+  const response = await clientAPI.post('/media/register', data);
+  return response.data.media;
+};
+
+// Delete media
+export const deleteMedia = async (id: string): Promise<void> => {
+  const clientAPI = createClientAPI();
+  await clientAPI.delete(`/media/${id}`);
+};
+
+// Add to src/api/api.ts
+export const getPublicMedia = async (type?: 'image' | 'video'): Promise<MediaItem[]> => {
+  const url = type ? `/media?type=${type}` : '/media';
+  const response = await API.get(url);
+  return response.data;
+};
+
+// Falls back to the timestamp embedded in a MongoDB ObjectId when createdAt is missing
+const getCreatedTime = (item: { id?: string; _id?: string; createdAt?: string }): number => {
+  const created = item.createdAt ? new Date(item.createdAt).getTime() : NaN;
+  if (!isNaN(created)) return created;
+  const objectId = item._id || item.id || '';
+  if (/^[0-9a-f]{24}$/i.test(objectId)) return parseInt(objectId.substring(0, 8), 16) * 1000;
+  return 0;
+};
+
+export const sortNewestFirst = <T extends { id?: string; _id?: string; createdAt?: string }>(items: T[]): T[] =>
+  [...items].sort((a, b) => getCreatedTime(b) - getCreatedTime(a));
+
 // Helper function to get full file URL
 export const getFileUrl = (filePath: string): string => {
   if (!filePath) return '';

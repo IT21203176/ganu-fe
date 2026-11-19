@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getEvents, Event, getEventId, getFileUrl } from "@/api/api";
+import { getEvents, Event, getEventId, getFileUrl, sortNewestFirst } from "@/api/api";
 
 export default function PublicEvents() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -24,7 +24,7 @@ export default function PublicEvents() {
     try {
       setError(null);
       const eventsData = await getEvents();
-      setEvents(eventsData);
+      setEvents(sortNewestFirst(eventsData));
     } catch (error) {
       console.error('Error fetching events:', error);
       setError('Failed to load events. Please try again later.');

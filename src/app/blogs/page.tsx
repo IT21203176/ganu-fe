@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Blog, getBlogId, getBlogs, getFileUrl } from "@/api/api";
+import { Blog, getBlogId, getBlogs, getFileUrl, sortNewestFirst } from "@/api/api";
 
 interface ModalImageState {
   src: string;
@@ -69,12 +69,11 @@ export default function BlogsPage() {
   };
 
   // Filter blogs based on type
-  const filteredBlogs = blogs
+  const filteredBlogs = sortNewestFirst(blogs)
     .filter(blog => filter === 'all' || 
       (filter === 'article' && !blog.isPdfPost) || 
       (filter === 'pdf' && blog.isPdfPost)
-    )
-    .sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()); // Sort by creation date
+    );
 
   const blogTypeCounts = {
     all: blogs.length,
