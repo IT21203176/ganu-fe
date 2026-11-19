@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getAdminMedia, registerMedia, deleteMedia, MediaItem } from "@/api/api";
-import Script from "next/script";
 
-// Define types for the Cloudinary Widget to avoid TypeScript crashes
+// Define types for the Cloudinary Widget
 interface CloudinaryWidgetResult {
   event: string;
   info: {
@@ -21,7 +20,6 @@ interface CloudinaryWidgetError {
   message: string;
 }
 
-// Extend the Window interface so TypeScript knows about window.cloudinary
 declare global {
   interface Window {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,6 +34,33 @@ export default function AdminMediaPage() {
   const [uploading, setUploading] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
+  // 1. Manually load the Cloudinary script using useEffect
+  useEffect(() => {
+    const scriptId = "cloudinary-upload-widget";
+    if (document.getElementById(scriptId)) {
+      if (window.cloudinary) setScriptLoaded(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = scriptId;
+    script.src = "https://upload-widget.cloudinary.com/global/all.js";
+    script.async = true;
+    
+    script.onload = () => {
+      console.log("Cloudinary script loaded successfully.");
+      setScriptLoaded(true);
+    };
+    
+    script.onerror = () => {
+      console.error("Failed to load Cloudinary script.");
+      alert("Failed to load the upload widget. Please check your internet connection.");
+    };
+
+    document.body.appendChild(script);
+  }, []);
+
+  // Fetch media logic
   const fetchMedia = useCallback(async () => {
     try {
       setLoading(true);
@@ -54,7 +79,6 @@ export default function AdminMediaPage() {
   }, [fetchMedia]);
 
   const openCloudinaryWidget = () => {
-    // Safety check: Don't crash if script hasn't loaded yet
     if (!scriptLoaded || !window.cloudinary) {
       alert("Cloudinary widget is still loading. Please wait a moment and try again.");
       return;
@@ -90,7 +114,7 @@ export default function AdminMediaPage() {
             fetchMedia(); 
           } catch (error) {
             console.error("Failed to save to DB:", error);
-            alert("Uploaded to Cloudinary, but failed to save to database. Check your Vercel environment variables.");
+            alert("Uploaded to Cloudinary, but failed to save to database. Check backend connection.");
           } finally {
             setUploading(false);
           }
@@ -121,13 +145,6 @@ export default function AdminMediaPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Load script before page becomes interactive */}
-      <Script 
-        src="https://upload-widget.cloudinary.com/global/all.js" 
-        strategy="beforeInteractive"
-        onLoad={() => setScriptLoaded(true)}
-      />
-
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Media Library</h1>
@@ -135,10 +152,10 @@ export default function AdminMediaPage() {
         </div>
         <button
           onClick={openCloudinaryWidget}
-          disabled={uploading}
+          disabled={uploading || !scriptLoaded}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow transition-colors disabled:opacity-50"
         >
-          {uploading ? "Saving..." : "+ Upload Media"}
+          {uploading ? "Saving..." : !scriptLoaded ? "Loading Widget..." : "+ Upload Media"}
         </button>
       </div>
 
@@ -161,8 +178,12 @@ export default function AdminMediaPage() {
       ) : mediaList.length === 0 ? (
         <div className="text-center py-20 bg-gray-50 rounded-lg border border-dashed border-gray-300">
           <p className="text-gray-500">No {filter !== 'all' ? filter + 's' : 'media'} found.</p>
-          <button onClick={openCloudinaryWidget} className="text-blue-600 mt-2 hover:underline">
-            Upload your first file
+          <button 
+            onClick={openCloudinaryWidget} 
+            disabled={!scriptLoaded}
+            className="text-blue-600 mt-2 hover:underline disabled:opacity-50"
+          >
+            {!scriptLoaded ? "Loading widget..." : "Upload your first file"}
           </button>
         </div>
       ) : (
